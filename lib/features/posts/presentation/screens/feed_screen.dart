@@ -3,7 +3,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:intl/intl.dart';
 import 'package:share_plus/share_plus.dart';
+import '../../../../core/constants/app_strings.dart';
 import '../../../../shared/widgets/loading_widget.dart';
+import '../../../../core/providers.dart';
 import '../../../auth/presentation/auth_notifier.dart';
 import '../posts_notifier.dart';
 
@@ -16,9 +18,6 @@ class FeedScreen extends ConsumerStatefulWidget {
 
 class _FeedScreenState extends ConsumerState<FeedScreen>
     with WidgetsBindingObserver {
-  final Set<String> _expandedPosts = <String>{};
-  final Map<String, TextEditingController> _commentControllers = {};
-
   @override
   void initState() {
     super.initState();
@@ -30,9 +29,6 @@ class _FeedScreenState extends ConsumerState<FeedScreen>
 
   @override
   void dispose() {
-    for (final controller in _commentControllers.values) {
-      controller.dispose();
-    }
     WidgetsBinding.instance.removeObserver(this);
     super.dispose();
   }
@@ -50,28 +46,29 @@ class _FeedScreenState extends ConsumerState<FeedScreen>
   }
 
   void _sharePost(String content, String authorName) {
-    final shareText = 'Compartilhado por $authorName no TeamUp:\n\n$content';
-    Share.share(shareText, subject: 'Post do TeamUp');
+    final shareText =
+        '${AppStrings.sharedBy} $authorName ${AppStrings.onTeamUp}:\n\n$content';
+    Share.share(shareText, subject: AppStrings.teamUpPost);
   }
 
   void _toggleComments(String postId) {
-    setState(() {
-      if (_expandedPosts.contains(postId)) {
-        _expandedPosts.remove(postId);
-        _commentControllers[postId]?.dispose();
-        _commentControllers.remove(postId);
-      } else {
-        _expandedPosts.add(postId);
-        _commentControllers[postId] = TextEditingController();
-      }
-    });
+    final uiState = ref.read(uiStateProvider);
+    final isExpanded = uiState.expandedPostIds.contains(postId);
+
+    if (isExpanded) {
+      ref.read(uiStateProvider.notifier).togglePostExpansion(postId);
+      ref.read(commentControllersProvider.notifier).removeController(postId);
+    } else {
+      ref.read(uiStateProvider.notifier).togglePostExpansion(postId);
+      // O controller será criado automaticamente quando necessário
+    }
   }
 
   void _submitComment(String postId) {
     final authState = ref.read(authNotifierProvider);
-    final controller = _commentControllers[postId];
-
-    if (controller == null) return;
+    final controller = ref
+        .read(commentControllersProvider.notifier)
+        .getController(postId);
 
     authState.when(
       initial: () {},
@@ -88,7 +85,7 @@ class _FeedScreenState extends ConsumerState<FeedScreen>
                 '${user.firstName ?? ''} ${user.lastName ?? ''}',
                 '',
               );
-          controller.clear();
+          ref.read(commentControllersProvider.notifier).clearController(postId);
         }
       },
       unauthenticated: () {},
@@ -100,17 +97,18 @@ class _FeedScreenState extends ConsumerState<FeedScreen>
   Widget build(BuildContext context) {
     final postsState = ref.watch(postsNotifierProvider);
     final authState = ref.watch(authNotifierProvider);
+    final uiState = ref.watch(uiStateProvider);
 
     return Scaffold(
       body: postsState.when(
-        initial: () => const LoadingWidget(message: 'Carregando posts...'),
-        loading: () => const LoadingWidget(message: 'Carregando posts...'),
+        initial: () => const LoadingWidget(message: AppStrings.loadingPosts),
+        loading: () => const LoadingWidget(message: AppStrings.loadingPosts),
         loaded: (posts) => RefreshIndicator(
           onRefresh: _refreshFeed,
           child: posts.isEmpty
               ? const Center(
                   child: Text(
-                    'Nenhum post encontrado',
+                    AppStrings.noPostsFound,
                     style: TextStyle(fontSize: 16, color: Colors.grey),
                   ),
                 )
@@ -124,7 +122,9 @@ class _FeedScreenState extends ConsumerState<FeedScreen>
                       orElse: () => '',
                     );
                     final isLiked = post.likedByUserIds.contains(currentUserId);
-                    final isExpanded = _expandedPosts.contains(post.id);
+                    final isExpanded = uiState.expandedPostIds.contains(
+                      post.id,
+                    );
 
                     return Card(
                       margin: const EdgeInsets.only(bottom: 16),
@@ -279,7 +279,7 @@ class _FeedScreenState extends ConsumerState<FeedScreen>
 
                               if (post.comments.isNotEmpty) ...[
                                 const Text(
-                                  'Comentários:',
+                                  AppStrings.comments,
                                   style: TextStyle(
                                     fontWeight: FontWeight.bold,
                                     fontSize: 14,
@@ -329,42 +329,50 @@ class _FeedScreenState extends ConsumerState<FeedScreen>
                                 const SizedBox(height: 12),
                               ],
 
-                              Row(
-                                children: [
-                                  Expanded(
-                                    child: TextField(
-                                      controller: _commentControllers[post.id],
-                                      maxLength: 100,
-                                      maxLines: null,
-                                      decoration: InputDecoration(
-                                        hintText: 'Escreva um comentário...',
-                                        border: OutlineInputBorder(
-                                          borderRadius: BorderRadius.circular(
-                                            20,
-                                          ),
-                                        ),
-                                        contentPadding:
-                                            const EdgeInsets.symmetric(
-                                              horizontal: 16,
-                                              vertical: 8,
+                              Consumer(
+                                builder: (context, ref, child) {
+                                  final controller = ref
+                                      .read(commentControllersProvider.notifier)
+                                      .getController(post.id);
+
+                                  return Row(
+                                    children: [
+                                      Expanded(
+                                        child: TextField(
+                                          controller: controller,
+                                          maxLength: 100,
+                                          maxLines: null,
+                                          decoration: InputDecoration(
+                                            hintText: AppStrings.writeComment,
+                                            border: OutlineInputBorder(
+                                              borderRadius:
+                                                  BorderRadius.circular(20),
                                             ),
-                                        counterText: '',
+                                            contentPadding:
+                                                const EdgeInsets.symmetric(
+                                                  horizontal: 16,
+                                                  vertical: 8,
+                                                ),
+                                            counterText: '',
+                                          ),
+                                          textCapitalization:
+                                              TextCapitalization.sentences,
+                                          onSubmitted: (_) =>
+                                              _submitComment(post.id),
+                                        ),
                                       ),
-                                      textCapitalization:
-                                          TextCapitalization.sentences,
-                                      onSubmitted: (_) =>
-                                          _submitComment(post.id),
-                                    ),
-                                  ),
-                                  const SizedBox(width: 8),
-                                  IconButton(
-                                    icon: const Icon(Icons.send),
-                                    onPressed: () => _submitComment(post.id),
-                                    color: Theme.of(
-                                      context,
-                                    ).colorScheme.primary,
-                                  ),
-                                ],
+                                      const SizedBox(width: 8),
+                                      IconButton(
+                                        icon: const Icon(Icons.send),
+                                        onPressed: () =>
+                                            _submitComment(post.id),
+                                        color: Theme.of(
+                                          context,
+                                        ).colorScheme.primary,
+                                      ),
+                                    ],
+                                  );
+                                },
                               ),
                             ],
                           ],
@@ -381,7 +389,7 @@ class _FeedScreenState extends ConsumerState<FeedScreen>
               const Icon(Icons.error_outline, size: 64, color: Colors.red),
               const SizedBox(height: 16),
               Text(
-                'Erro ao carregar posts',
+                AppStrings.errorLoadingPosts,
                 style: Theme.of(context).textTheme.headlineSmall,
               ),
               const SizedBox(height: 8),
@@ -395,7 +403,7 @@ class _FeedScreenState extends ConsumerState<FeedScreen>
                 onPressed: () => ref
                     .read(postsNotifierProvider.notifier)
                     .loadPosts(refresh: true),
-                child: const Text('Tentar novamente'),
+                child: const Text(AppStrings.tryAgainButton),
               ),
             ],
           ),
@@ -409,13 +417,13 @@ class _FeedScreenState extends ConsumerState<FeedScreen>
     final difference = now.difference(date);
 
     if (difference.inDays > 0) {
-      return DateFormat('dd/MM/yyyy').format(date);
+      return DateFormat(AppStrings.dateFormat).format(date);
     } else if (difference.inHours > 0) {
-      return '${difference.inHours}h atrás';
+      return '${difference.inHours}${AppStrings.hoursAgo}';
     } else if (difference.inMinutes > 0) {
-      return '${difference.inMinutes}m atrás';
+      return '${difference.inMinutes}${AppStrings.minutesAgo}';
     } else {
-      return 'Agora';
+      return AppStrings.now;
     }
   }
 }

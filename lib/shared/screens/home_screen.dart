@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../core/constants/app_strings.dart';
 import '../../features/posts/presentation/screens/feed_screen.dart';
 import '../../features/posts/presentation/posts_notifier.dart';
 import '../../features/users/presentation/screens/users_screen.dart';
@@ -8,25 +9,21 @@ import '../../features/auth/presentation/auth_notifier.dart';
 import 'package:go_router/go_router.dart';
 import '../../features/users/presentation/screens/favorites_screen.dart';
 import '../../core/providers.dart';
+import '../widgets/locale_toggle.dart';
 
-class HomeScreen extends ConsumerStatefulWidget {
+class HomeScreen extends ConsumerWidget {
   const HomeScreen({super.key});
 
   @override
-  ConsumerState<HomeScreen> createState() => _HomeScreenState();
-}
+  Widget build(BuildContext context, WidgetRef ref) {
+    final uiState = ref.watch(uiStateProvider);
 
-class _HomeScreenState extends ConsumerState<HomeScreen> {
-  int _currentIndex = 0;
+    final screens = [
+      const FeedScreen(),
+      const UsersScreen(),
+      const FavoritesScreen(),
+    ];
 
-  final List<Widget> _screens = [
-    const FeedScreen(),
-    const UsersScreen(),
-    const FavoritesScreen(),
-  ];
-
-  @override
-  Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: Row(
@@ -49,7 +46,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             ),
             const SizedBox(width: 12),
             Text(
-              'TeamUp',
+              AppStrings.appName,
               style: TextStyle(
                 fontWeight: FontWeight.bold,
                 color: Theme.of(context).colorScheme.primary,
@@ -58,10 +55,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           ],
         ),
         actions: [
+          const LocaleToggle(),
           IconButton(
             icon: const Icon(Icons.logout),
             onPressed: () {
-              _showLogoutDialog();
+              _showLogoutDialog(context, ref);
             },
           ),
         ],
@@ -69,13 +67,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         surfaceTintColor: Colors.transparent,
       ),
-      body: IndexedStack(index: _currentIndex, children: _screens),
+      body: IndexedStack(index: uiState.homeNavigationIndex, children: screens),
       bottomNavigationBar: BottomNavigationBar(
-        currentIndex: _currentIndex,
+        currentIndex: uiState.homeNavigationIndex,
         onTap: (index) {
-          setState(() {
-            _currentIndex = index;
-          });
+          ref.read(uiStateProvider.notifier).setHomeNavigationIndex(index);
 
           if (index == 0) {
             ref.read(postsNotifierProvider.notifier).loadPosts(refresh: true);
@@ -92,34 +88,34 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           BottomNavigationBarItem(
             icon: Icon(Icons.home_outlined),
             activeIcon: Icon(Icons.home),
-            label: 'Feed',
+            label: AppStrings.feedTab,
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.people_outlined),
             activeIcon: Icon(Icons.people),
-            label: 'Equipe',
+            label: AppStrings.teamTab,
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.star_outline),
             activeIcon: Icon(Icons.star),
-            label: 'Favoritos',
+            label: AppStrings.favoritesTab,
           ),
         ],
       ),
     );
   }
 
-  void _showLogoutDialog() {
+  void _showLogoutDialog(BuildContext context, WidgetRef ref) {
     showDialog(
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          title: const Text('Sair'),
-          content: const Text('Tem certeza que deseja sair da aplicação?'),
+          title: const Text(AppStrings.logoutTitle),
+          content: const Text(AppStrings.logoutConfirmation),
           actions: [
             TextButton(
               onPressed: () => Navigator.of(context).pop(),
-              child: const Text('Cancelar'),
+              child: const Text(AppStrings.cancelButton),
             ),
             TextButton(
               onPressed: () {
@@ -127,7 +123,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 ref.read(authNotifierProvider.notifier).logout();
                 context.go('/login');
               },
-              child: Text('Sair', style: TextStyle(color: Colors.red[600])),
+              child: Text(
+                AppStrings.logoutButton,
+                style: TextStyle(color: Colors.red[600]),
+              ),
             ),
           ],
         );

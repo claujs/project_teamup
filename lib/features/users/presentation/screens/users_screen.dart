@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:go_router/go_router.dart';
+import '../../../../core/constants/app_strings.dart';
 import '../../../../shared/widgets/loading_widget.dart';
+import '../../../../l10n/app_localizations.dart';
 import '../users_notifier.dart';
 
 class UsersScreen extends ConsumerStatefulWidget {
@@ -69,7 +71,7 @@ class _UsersScreenState extends ConsumerState<UsersScreen>
             child: TextField(
               controller: _searchController,
               decoration: InputDecoration(
-                hintText: 'Buscar por nome ou e-mail...',
+                hintText: AppLocalizations.of(context)!.searchUsers,
                 prefixIcon: const Icon(Icons.search),
                 suffixIcon: _searchController.text.isNotEmpty
                     ? IconButton(
@@ -94,23 +96,26 @@ class _UsersScreenState extends ConsumerState<UsersScreen>
           Expanded(
             child: usersState.when(
               initial: () =>
-                  const LoadingWidget(message: 'Carregando equipe...'),
+                  const LoadingWidget(message: AppStrings.loadingTeam),
               loading: () =>
-                  const LoadingWidget(message: 'Carregando equipe...'),
+                  const LoadingWidget(message: AppStrings.loadingTeam),
               loaded: (users) => users.isEmpty
-                  ? const Center(
+                  ? Center(
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Icon(
+                          const Icon(
                             Icons.people_outline,
                             size: 64,
                             color: Colors.grey,
                           ),
-                          SizedBox(height: 16),
+                          const SizedBox(height: 16),
                           Text(
-                            'Nenhum usuário encontrado',
-                            style: TextStyle(fontSize: 16, color: Colors.grey),
+                            AppLocalizations.of(context)!.noUsersFound,
+                            style: const TextStyle(
+                              fontSize: 16,
+                              color: Colors.grey,
+                            ),
                           ),
                         ],
                       ),
@@ -182,7 +187,7 @@ class _UsersScreenState extends ConsumerState<UsersScreen>
                     ),
                     const SizedBox(height: 16),
                     Text(
-                      'Erro ao carregar equipe',
+                      AppStrings.errorLoadingTeam,
                       style: Theme.of(context).textTheme.headlineSmall,
                     ),
                     const SizedBox(height: 8),
@@ -196,7 +201,7 @@ class _UsersScreenState extends ConsumerState<UsersScreen>
                       onPressed: () => ref
                           .read(usersNotifierProvider.notifier)
                           .loadUsers(refresh: true),
-                      child: const Text('Tentar novamente'),
+                      child: const Text(AppStrings.tryAgainButton),
                     ),
                   ],
                 ),
@@ -209,29 +214,13 @@ class _UsersScreenState extends ConsumerState<UsersScreen>
   }
 
   String _generateJobInfo(int userId) {
-    final positions = [
-      'Desenvolvedor Frontend',
-      'Desenvolvedor Backend',
-      'Designer UX/UI',
-      'Product Manager',
-      'DevOps Engineer',
-      'Data Scientist',
-      'QA Engineer',
-      'Tech Lead',
-    ];
+    // Generate deterministic job info based on user ID
+    final jobTitles = AppStrings.jobTitles;
+    final departments = AppStrings.departments;
 
-    final departments = [
-      'Tecnologia',
-      'Produto',
-      'Design',
-      'Engenharia',
-      'Dados',
-      'Qualidade',
-    ];
+    final jobIndex = userId % jobTitles.length;
+    final deptIndex = userId % departments.length;
 
-    final position = positions[userId % positions.length];
-    final department = departments[userId % departments.length];
-
-    return '$position • $department';
+    return '${jobTitles[jobIndex]} - ${departments[deptIndex]}';
   }
 }

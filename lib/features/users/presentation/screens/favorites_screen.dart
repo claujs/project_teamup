@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:go_router/go_router.dart';
+import '../../../../core/constants/app_strings.dart';
 import '../../../../shared/widgets/loading_widget.dart';
 import '../../../../core/providers.dart';
 
@@ -19,7 +20,7 @@ class FavoritesScreen extends ConsumerWidget {
           initial: () => const LoadingWidget(),
           loading: () => const LoadingWidget(),
           loaded: (favorites) => favorites.isEmpty
-              ? const Center(child: Text('Nenhum favorito adicionado.'))
+              ? const Center(child: Text(AppStrings.noFavoritesAdded))
               : ListView.builder(
                   itemCount: favorites.length,
                   itemBuilder: (context, index) {
@@ -39,7 +40,8 @@ class FavoritesScreen extends ConsumerWidget {
                     );
                   },
                 ),
-          error: (message) => Center(child: Text('Erro: $message')),
+          error: (message) =>
+              Center(child: Text('${AppStrings.errorMessage}: $message')),
         ),
       ),
     );

@@ -1,5 +1,6 @@
 import 'package:dartz/dartz.dart';
 import '../../../../core/constants/app_constants.dart';
+import '../../../../core/constants/app_strings.dart';
 import '../../../../core/errors/failures.dart';
 import '../../../../core/storage/local_storage.dart';
 import '../../../../core/storage/local_user_service.dart';
@@ -17,57 +18,46 @@ class AuthRepositoryImpl implements AuthRepository {
   @override
   Future<Either<Failure, AuthUser>> login(String email, String password) async {
     try {
-      final isLocalUser = await _localUserService.validateUser(email, password);
-      if (isLocalUser) {
-        final userData = await _localUserService.getUser(email);
-        if (userData != null) {
-          const localToken = 'local_user_token';
-          final authUser = AuthUser(
-            id: userData['id']?.toString() ?? '',
-            email: userData['email']?.toString() ?? '',
-            token: localToken,
-            firstName: userData['firstName']?.toString() ?? '',
-            lastName: userData['lastName']?.toString() ?? '',
+      final userData = await _localUserService.getUser(email);
+      if (userData != null && userData.isNotEmpty) {
+        // Local user found, validate password
+        if (await _localUserService.validateUser(email, password)) {
+          await _localStorage.saveString(
+            AppConstants.authTokenKey,
+            AppStrings.localUserToken,
           );
-
-          await _localUserService.saveCredentials(email, password);
-
-          await _localStorage.saveString(AppConstants.authTokenKey, localToken);
-          await _localStorage.saveObject(
-            AppConstants.userDataKey,
-            authUser.toJson(),
+          return Right(
+            AuthUser(
+              id: userData['id']?.toString() ?? '',
+              email: userData['email']?.toString() ?? '',
+              token: AppStrings.localUserToken,
+              firstName: userData['firstName']?.toString() ?? '',
+              lastName: userData['lastName']?.toString() ?? '',
+            ),
           );
-
-          return Right(authUser);
         }
       }
 
-      if (email == 'eve.holt@reqres.in' && password == 'cityslicka') {
-        const mockToken = 'demo_user_token';
-        final authUser = AuthUser(
-          id: 'demo_user',
-          email: email,
-          token: mockToken,
-          firstName: 'Eve',
-          lastName: 'Holt',
+      // Demo user check
+      if (email == AppStrings.demoEmail &&
+          password == AppStrings.demoPassword) {
+        await _localStorage.saveString(
+          AppConstants.authTokenKey,
+          AppStrings.demoToken,
         );
-
-        await _localUserService.saveCredentials(email, password);
-
-        await _localStorage.saveString(AppConstants.authTokenKey, mockToken);
-        await _localStorage.saveObject(
-          AppConstants.userDataKey,
-          authUser.toJson(),
+        return Right(
+          AuthUser(
+            id: AppStrings.demoUserId,
+            email: email,
+            token: AppStrings.demoToken,
+            firstName: AppStrings.demoFirstName,
+            lastName: AppStrings.demoLastName,
+          ),
         );
-
-        return Right(authUser);
       }
 
-      return Left(
-        AuthFailure(
-          'Credenciais inválidas. Cadastre-se primeiro ou use as credenciais de demonstração.',
-        ),
-      );
+      // No valid credentials found
+      return Left(AuthFailure(AppStrings.invalidCredentials));
     } catch (e) {
       return Left(ServerFailure('Erro interno: ${e.toString()}'));
     }
@@ -80,44 +70,37 @@ class AuthRepositoryImpl implements AuthRepository {
     String password,
   ) async {
     try {
-      final userExists = await _localUserService.userExists(email);
-      if (userExists) {
-        return Left(AuthFailure('Usuário já cadastrado com este e-mail'));
+      final existingUser = await _localUserService.getUser(email);
+      if (existingUser != null && existingUser.isNotEmpty) {
+        return Left(AuthFailure(AppStrings.userAlreadyExists));
       }
 
+      // Create new user
       final registrationSuccess = await _localUserService.registerUser(
         email,
         fullName,
         password,
       );
-
       if (registrationSuccess) {
         final userData = await _localUserService.getUser(email);
-        if (userData != null) {
-          const localToken = 'local_user_token';
-          final authUser = AuthUser(
-            id: userData['id'],
-            email: userData['email'],
-            token: localToken,
-            firstName: userData['firstName'],
-            lastName: userData['lastName'],
+        if (userData != null && userData.isNotEmpty) {
+          await _localStorage.saveString(
+            AppConstants.authTokenKey,
+            AppStrings.localUserToken,
           );
-
-          await _localUserService.saveCredentials(email, password);
-
-          await _localStorage.saveString(AppConstants.authTokenKey, localToken);
-          await _localStorage.saveObject(
-            AppConstants.userDataKey,
-            authUser.toJson(),
+          return Right(
+            AuthUser(
+              id: userData['id'],
+              email: userData['email'],
+              token: AppStrings.localUserToken,
+              firstName: userData['firstName'],
+              lastName: userData['lastName'],
+            ),
           );
-
-          return Right(authUser);
-        } else {
-          return Left(AuthFailure('Erro ao recuperar dados do usuário'));
         }
-      } else {
-        return Left(AuthFailure('Erro ao cadastrar usuário'));
       }
+
+      return Left(AuthFailure('Erro ao cadastrar usuário'));
     } catch (e) {
       return Left(ServerFailure(e.toString()));
     }

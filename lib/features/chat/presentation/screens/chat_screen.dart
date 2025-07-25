@@ -1,7 +1,7 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-
+import '../../../../core/constants/app_strings.dart';
 import '../../../../core/providers.dart';
 import '../../domain/entities/chat_message.dart';
 
@@ -90,9 +90,10 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                   ),
                   Text(
                     chatState.maybeWhen(
-                      loaded: (conversation) =>
-                          conversation.isOnline ? 'Online' : 'Offline',
-                      orElse: () => 'Conectando...',
+                      loaded: (conversation) => conversation.isOnline
+                          ? AppStrings.online
+                          : AppStrings.offline,
+                      orElse: () => AppStrings.connecting,
                     ),
                     style: TextStyle(
                       fontSize: 12,
@@ -116,7 +117,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
             onPressed: () {
               ScaffoldMessenger.of(context).showSnackBar(
                 const SnackBar(
-                  content: Text('Chamada de vídeo em desenvolvimento'),
+                  content: Text(AppStrings.videoCallInDevelopment),
                 ),
               );
             },
@@ -126,7 +127,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
             onPressed: () {
               ScaffoldMessenger.of(context).showSnackBar(
                 const SnackBar(
-                  content: Text('Chamada de voz em desenvolvimento'),
+                  content: Text(AppStrings.voiceCallInDevelopment),
                 ),
               );
             },
@@ -140,7 +141,8 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
         children: [
           Expanded(
             child: chatState.when(
-              initial: () => const Center(child: Text('Iniciando conversa...')),
+              initial: () =>
+                  const Center(child: Text(AppStrings.startingConversation)),
               loading: () => const Center(child: CircularProgressIndicator()),
               loaded: (conversation) {
                 WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -209,8 +211,8 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                 ),
                 child: TextField(
                   controller: _messageController,
-                  decoration: const InputDecoration(
-                    hintText: 'Digite uma mensagem...',
+                  decoration: InputDecoration(
+                    hintText: AppStrings.typeMessage,
                     border: InputBorder.none,
                     contentPadding: EdgeInsets.symmetric(
                       horizontal: 16,

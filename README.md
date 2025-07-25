@@ -178,11 +178,41 @@ LoginScreen → HomeScreen
 2. **Offline Detection** → **Cache Retrieval**
 3. **State Management** → **UI Update**
 
+## 🌍 Internacionalização (i18n)
+
+A aplicação suporta múltiplos idiomas com mudança dinâmica:
+
+### Idiomas Suportados
+
+- **Português (pt)** - Idioma padrão
+- **English (en)** - Idioma secundário
+
+### Como Funciona
+
+- **Mudança de Idioma**: Botão na AppBar principal (ícone de mundo 🌍)
+- **Persistência**: Idioma selecionado é salvo localmente
+- **Atualização em Tempo Real**: Interface atualiza instantaneamente
+
+### Estrutura
+
+```
+lib/l10n/
+├── app_pt.arb          # Strings em português
+├── app_en.arb          # Strings em inglês
+└── app_localizations.dart  # Classes geradas automaticamente
+```
+
+### Adicionar Novas Strings
+
+1. Adicione a string em `app_pt.arb` e `app_en.arb`
+2. Execute `flutter gen-l10n` para gerar as classes
+3. Use `AppLocalizations.of(context)!.suaString` no código
+
 ## 🚧 Melhorias Futuras
 
 ### Funcionalidades Extras (Diferenciais)
 
-- [ ] **Internacionalização (i18n)**: Suporte a múltiplos idiomas
+- [x] **Internacionalização (i18n)**: Suporte a múltiplos idiomas (Português/Inglês)
 - [ ] **CI/CD**: GitHub Actions para testes e build automático
 - [ ] **Modularização**: Separação em packages independentes
 - [ ] **Responsividade Avançada**: Layouts adaptativos para tablets

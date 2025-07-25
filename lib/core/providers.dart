@@ -12,6 +12,9 @@ import '../features/users/presentation/favorites_notifier.dart';
 import '../features/chat/data/repositories/chat_repository_impl.dart';
 import '../features/chat/domain/repositories/chat_repository.dart';
 import '../features/chat/presentation/chat_notifier.dart';
+export 'providers/ui_state_provider.dart';
+export 'providers/credentials_provider.dart';
+export 'providers/comment_controllers_provider.dart';
 
 final apiClientProvider = Provider<ApiClient>((ref) => ApiClient());
 final networkInfoProvider = Provider<NetworkInfo>((ref) => NetworkInfo());

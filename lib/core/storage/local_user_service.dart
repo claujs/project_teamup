@@ -2,14 +2,15 @@ import 'dart:convert';
 import 'package:crypto/crypto.dart';
 import 'package:flutter/foundation.dart';
 import 'package:hive_flutter/hive_flutter.dart';
+import '../constants/app_strings.dart';
 
 class LocalUserService {
-  static const String _usersBoxName = 'registered_users';
-  static const String _credentialsBoxName = 'saved_credentials';
-  static const String _credentialsKey = 'user_credentials';
+  static const String _usersBoxName = AppStrings.usersBoxName;
+  static const String _credentialsBoxName = AppStrings.credentialsBoxName;
+  static const String _credentialsKey = AppStrings.credentialsKey;
 
-  late Box<dynamic> _usersBox;
-  late Box<dynamic> _credentialsBox;
+  late Box _usersBox;
+  late Box _credentialsBox;
 
   static final LocalUserService _instance = LocalUserService._internal();
   factory LocalUserService() => _instance;
@@ -17,13 +18,13 @@ class LocalUserService {
 
   Future<void> init() async {
     try {
-      _usersBox = await Hive.openBox<dynamic>(_usersBoxName);
-      _credentialsBox = await Hive.openBox<dynamic>(_credentialsBoxName);
+      await Hive.initFlutter();
+      _usersBox = await Hive.openBox(_usersBoxName);
+      _credentialsBox = await Hive.openBox(_credentialsBoxName);
     } catch (e) {
+      // If there's a corruption, clear the boxes and recreate
       debugPrint('Error opening Hive boxes, clearing corrupted data: $e');
       await _clearCorruptedData();
-      _usersBox = await Hive.openBox<dynamic>(_usersBoxName);
-      _credentialsBox = await Hive.openBox<dynamic>(_credentialsBoxName);
     }
   }
 
@@ -31,6 +32,9 @@ class LocalUserService {
     try {
       await Hive.deleteBoxFromDisk(_usersBoxName);
       await Hive.deleteBoxFromDisk(_credentialsBoxName);
+
+      _usersBox = await Hive.openBox(_usersBoxName);
+      _credentialsBox = await Hive.openBox(_credentialsBoxName);
     } catch (e) {
       debugPrint('Error clearing corrupted data: $e');
     }
