@@ -57,7 +57,7 @@ class AuthRepositoryImpl implements AuthRepository {
       }
 
       // No valid credentials found
-      return Left(AuthFailure(AppStrings.invalidCredentials));
+      return Left(AuthFailure('Credenciais inválidas'));
     } catch (e) {
       return Left(ServerFailure('Erro interno: ${e.toString()}'));
     }
@@ -72,7 +72,7 @@ class AuthRepositoryImpl implements AuthRepository {
     try {
       final existingUser = await _localUserService.getUser(email);
       if (existingUser != null && existingUser.isNotEmpty) {
-        return Left(AuthFailure(AppStrings.userAlreadyExists));
+        return Left(AuthFailure('Usuário já existe'));
       }
 
       // Create new user

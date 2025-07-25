@@ -1,4 +1,5 @@
-import '../constants/app_strings.dart';
+import 'package:flutter/material.dart';
+import '../../../l10n/app_localizations.dart';
 
 /// Classe utilitária contendo validators para formulários que podem ser
 /// usados globalmente em todo o projeto
@@ -14,53 +15,85 @@ class FormValidators {
   }
 
   /// Validator para email
-  static String? email(String? value) {
+  static String? email(String? value, {BuildContext? context}) {
     if (value == null || value.isEmpty) {
-      return AppStrings.emailRequired;
+      if (context != null) {
+        return AppLocalizations.of(context)!.emailRequired;
+      }
+      return 'Email é obrigatório';
     }
 
     final emailRegex = RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$');
     if (!emailRegex.hasMatch(value)) {
-      return AppStrings.emailInvalid;
+      if (context != null) {
+        return AppLocalizations.of(context)!.emailInvalid;
+      }
+      return 'Email inválido';
     }
 
     return null;
   }
 
   /// Validator para nome completo (deve ter pelo menos 2 palavras)
-  static String? fullName(String? value) {
+  static String? fullName(String? value, {BuildContext? context}) {
     if (value == null || value.isEmpty) {
-      return AppStrings.fullNameRequired;
+      if (context != null) {
+        return AppLocalizations.of(context)!.fullNameRequired;
+      }
+      return 'Nome completo é obrigatório';
     }
 
     if (value.trim().split(' ').length < 2) {
-      return AppStrings.fullNameFormat;
+      if (context != null) {
+        return AppLocalizations.of(context)!.fullNameFormat;
+      }
+      return 'Digite seu nome e sobrenome';
     }
 
     return null;
   }
 
   /// Validator para password
-  static String? password(String? value, {int minLength = 6}) {
+  static String? password(
+    String? value, {
+    int minLength = 6,
+    BuildContext? context,
+  }) {
     if (value == null || value.isEmpty) {
-      return AppStrings.passwordRequired;
+      if (context != null) {
+        return AppLocalizations.of(context)!.passwordRequired;
+      }
+      return 'Senha é obrigatória';
     }
 
     if (value.length < minLength) {
-      return AppStrings.passwordMinLength;
+      if (context != null) {
+        return AppLocalizations.of(context)!.passwordMinLength;
+      }
+      return 'Senha deve ter pelo menos $minLength caracteres';
     }
 
     return null;
   }
 
   /// Validator para confirmação de password
-  static String? confirmPassword(String? value, String originalPassword) {
+  static String? confirmPassword(
+    String? value,
+    String originalPassword, {
+    BuildContext? context,
+  }) {
     if (value == null || value.isEmpty) {
-      return AppStrings.confirmPasswordRequired;
+      if (context != null) {
+        return AppLocalizations.of(context)!.confirmPasswordRequired;
+      }
+      return 'Confirmação de senha é obrigatória';
     }
 
     if (value != originalPassword) {
-      return AppStrings.passwordMismatch;
+      if (context != null) {
+        return AppLocalizations.of(context)!.passwordMismatch;
+      }
+      return 'Senhas não coincidem';
     }
 
     return null;

@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
-import 'core/constants/app_strings.dart';
 import 'l10n/app_localizations.dart';
 import 'core/network/api_client.dart';
 import 'core/router.dart';
@@ -28,7 +27,7 @@ class MyApp extends ConsumerWidget {
     final locale = ref.watch(localeProvider);
 
     return MaterialApp.router(
-      title: AppStrings.appName,
+      title: 'TeamUp',
       localizationsDelegates: const [
         AppLocalizations.delegate,
         GlobalMaterialLocalizations.delegate,

@@ -1,7 +1,7 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../../../core/constants/app_strings.dart';
+import '../../../../l10n/app_localizations.dart';
 import '../../../../core/providers.dart';
 import '../../domain/entities/chat_message.dart';
 
@@ -123,8 +123,8 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                     ),
                     overflow: TextOverflow.ellipsis,
                   ),
-                  const Text(
-                    AppStrings.online,
+                  Text(
+                    AppLocalizations.of(context)!.online,
                     style: TextStyle(fontSize: 12, color: Colors.green),
                   ),
                 ],
@@ -137,8 +137,10 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
             icon: const Icon(Icons.videocam_outlined),
             onPressed: () {
               ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text(AppStrings.videoCallInDevelopment),
+                SnackBar(
+                  content: Text(
+                    AppLocalizations.of(context)!.videoCallInDevelopment,
+                  ),
                 ),
               );
             },
@@ -147,8 +149,10 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
             icon: const Icon(Icons.phone_outlined),
             onPressed: () {
               ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text(AppStrings.voiceCallInDevelopment),
+                SnackBar(
+                  content: Text(
+                    AppLocalizations.of(context)!.voiceCallInDevelopment,
+                  ),
                 ),
               );
             },
@@ -162,11 +166,11 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
         children: [
           Expanded(
             child: chatState.when(
-              initial: () =>
-                  const Center(child: Text(AppStrings.startingConversation)),
+              initial: () => Center(
+                child: Text(AppLocalizations.of(context)!.startingConversation),
+              ),
               loading: () => const Center(child: CircularProgressIndicator()),
               loaded: (conversation) {
-                // Scroll apenas quando necessário e com segurança
                 if (_shouldAutoScroll && conversation.messages.isNotEmpty) {
                   Future.microtask(() => _scrollToBottom());
                   _shouldAutoScroll = false;
@@ -235,7 +239,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                 child: TextField(
                   controller: _messageController,
                   decoration: InputDecoration(
-                    hintText: AppStrings.typeMessage,
+                    hintText: AppLocalizations.of(context)!.typeMessage,
                     border: InputBorder.none,
                     contentPadding: EdgeInsets.symmetric(
                       horizontal: 16,

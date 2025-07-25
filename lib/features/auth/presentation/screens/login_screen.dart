@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import '../../../../core/constants/app_strings.dart';
 import '../../../../core/providers.dart';
 import '../../../../core/utils/form_validators.dart';
 import '../../../../shared/widgets/loading_widget.dart';
@@ -67,6 +66,23 @@ class LoginScreen extends ConsumerWidget {
               ),
             ),
           ),
+          desktop: Center(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 500),
+              child: Card(
+                elevation: 8,
+                child: Padding(
+                  padding: const EdgeInsets.all(48.0),
+                  child: _LoginForm(
+                    authState: authState,
+                    uiState: uiState,
+                    credentialsState: credentialsState,
+                    isTablet: true,
+                  ),
+                ),
+              ),
+            ),
+          ),
         ),
       ),
     );
@@ -98,7 +114,7 @@ class _LoginFormState extends ConsumerState<_LoginForm> {
   @override
   void initState() {
     super.initState();
-    // Preencher credenciais salvas se existirem
+    // Preenche campos com credenciais salvas
     _emailController.text = widget.credentialsState.email;
     _passwordController.text = widget.credentialsState.password;
   }
@@ -111,10 +127,10 @@ class _LoginFormState extends ConsumerState<_LoginForm> {
   }
 
   void _handleLogin() {
-    if (_formKey.currentState!.validate()) {
+    if (_formKey.currentState?.validate() ?? false) {
       ref
           .read(authNotifierProvider.notifier)
-          .login(_emailController.text.trim(), _passwordController.text.trim());
+          .login(_emailController.text, _passwordController.text);
     }
   }
 
@@ -125,6 +141,7 @@ class _LoginFormState extends ConsumerState<_LoginForm> {
       orElse: () => false,
     );
     final isTablet = widget.isTablet;
+    final l10n = AppLocalizations.of(context)!;
 
     return Form(
       key: _formKey,
@@ -159,7 +176,7 @@ class _LoginFormState extends ConsumerState<_LoginForm> {
           SizedBox(height: isTablet ? 40 : 32),
 
           Text(
-            AppStrings.loginTitle,
+            l10n.loginTitle,
             style: TextStyle(
               fontSize: isTablet ? 32 : 28,
               fontWeight: FontWeight.bold,
@@ -170,7 +187,7 @@ class _LoginFormState extends ConsumerState<_LoginForm> {
           SizedBox(height: isTablet ? 12 : 8),
 
           Text(
-            AppStrings.loginSubtitle,
+            l10n.loginSubtitle,
             style: TextStyle(
               fontSize: isTablet ? 18 : 16,
               color: Colors.grey[600],
@@ -178,33 +195,29 @@ class _LoginFormState extends ConsumerState<_LoginForm> {
             textAlign: TextAlign.center,
           ),
 
-          SizedBox(height: isTablet ? 48 : 40),
+          SizedBox(height: isTablet ? 40 : 32),
 
           // Email field
           TextFormField(
             controller: _emailController,
-            enabled: !isLoading,
             decoration: InputDecoration(
-              labelText: AppLocalizations.of(context)!.email,
-              prefixIcon: Icon(Icons.email, size: isTablet ? 24 : 20),
+              labelText: l10n.email,
               labelStyle: TextStyle(fontSize: isTablet ? 18 : 16),
             ),
             style: TextStyle(fontSize: isTablet ? 18 : 16),
             keyboardType: TextInputType.emailAddress,
             textInputAction: TextInputAction.next,
-            validator: FormValidators.email,
+            validator: (value) => FormValidators.email(value, context: context),
             autovalidateMode: AutovalidateMode.onUserInteraction,
           ),
 
-          const SizedBox(height: 24),
+          SizedBox(height: isTablet ? 24 : 16),
 
           // Password field
           TextFormField(
             controller: _passwordController,
-            enabled: !isLoading,
             decoration: InputDecoration(
-              labelText: AppLocalizations.of(context)!.password,
-              prefixIcon: Icon(Icons.lock, size: isTablet ? 24 : 20),
+              labelText: l10n.password,
               suffixIcon: IconButton(
                 icon: Icon(
                   widget.uiState.loginPasswordObscured
@@ -223,7 +236,8 @@ class _LoginFormState extends ConsumerState<_LoginForm> {
             style: TextStyle(fontSize: isTablet ? 18 : 16),
             obscureText: widget.uiState.loginPasswordObscured,
             textInputAction: TextInputAction.done,
-            validator: FormValidators.password,
+            validator: (value) =>
+                FormValidators.password(value, context: context),
             autovalidateMode: AutovalidateMode.onUserInteraction,
             onFieldSubmitted: (_) => _handleLogin(),
           ),
@@ -243,7 +257,7 @@ class _LoginFormState extends ConsumerState<_LoginForm> {
               child: isLoading
                   ? const LoadingWidget(size: 24)
                   : Text(
-                      AppStrings.loginButton,
+                      l10n.loginButton,
                       style: TextStyle(fontSize: isTablet ? 18 : 16),
                     ),
             ),
@@ -256,14 +270,14 @@ class _LoginFormState extends ConsumerState<_LoginForm> {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Text(
-                AppStrings.noAccountQuestion,
+                l10n.noAccountQuestion,
                 style: TextStyle(fontSize: isTablet ? 16 : 14),
               ),
               const SizedBox(width: 4),
               GestureDetector(
                 onTap: !isLoading ? () => context.go('/register') : null,
                 child: Text(
-                  AppStrings.createAccountAction,
+                  l10n.createAccountAction,
                   style: TextStyle(
                     fontSize: isTablet ? 16 : 14,
                     color: Theme.of(context).colorScheme.primary,
@@ -274,7 +288,7 @@ class _LoginFormState extends ConsumerState<_LoginForm> {
             ],
           ),
 
-          if (!isTablet) const Spacer(),
+          if (!isTablet) const Spacer(flex: 2),
         ],
       ),
     );

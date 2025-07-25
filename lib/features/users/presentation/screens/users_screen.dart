@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:go_router/go_router.dart';
-import '../../../../core/constants/app_strings.dart';
+
 import '../../../../shared/widgets/users_skeleton.dart';
 import '../../../../l10n/app_localizations.dart';
 import '../users_notifier.dart';
@@ -173,7 +173,7 @@ class _UsersScreenState extends ConsumerState<UsersScreen>
                     ),
                     const SizedBox(height: 16),
                     Text(
-                      AppStrings.errorLoadingTeam,
+                      AppLocalizations.of(context)!.errorLoadingTeam,
                       style: Theme.of(context).textTheme.headlineSmall
                           ?.copyWith(fontSize: isTablet ? 28 : null),
                     ),
@@ -200,7 +200,7 @@ class _UsersScreenState extends ConsumerState<UsersScreen>
                           .read(usersNotifierProvider.notifier)
                           .loadUsers(refresh: true),
                       child: Text(
-                        AppStrings.tryAgainButton,
+                        AppLocalizations.of(context)!.tryAgainButton,
                         style: TextStyle(fontSize: isTablet ? 18 : 16),
                       ),
                     ),
@@ -306,7 +306,7 @@ class _UserCard extends StatelessWidget {
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  _generateJobInfo(user.id),
+                  _generateJobInfo(context, user.id),
                   style: TextStyle(
                     color: Theme.of(context).colorScheme.primary,
                     fontWeight: FontWeight.w500,
@@ -354,7 +354,7 @@ class _UserCard extends StatelessWidget {
             Text(user.email),
             const SizedBox(height: 4),
             Text(
-              _generateJobInfo(user.id),
+              _generateJobInfo(context, user.id),
               style: TextStyle(
                 color: Theme.of(context).colorScheme.primary,
                 fontWeight: FontWeight.w500,
@@ -371,10 +371,27 @@ class _UserCard extends StatelessWidget {
     );
   }
 
-  String _generateJobInfo(int userId) {
+  String _generateJobInfo(BuildContext context, int userId) {
     // Generate deterministic job info based on user ID
-    final jobTitles = AppStrings.jobTitles;
-    final departments = AppStrings.departments;
+    final l10n = AppLocalizations.of(context)!;
+    final jobTitles = [
+      l10n.jobTitleFrontend,
+      l10n.jobTitleBackend,
+      l10n.jobTitleUxUi,
+      l10n.jobTitleProductManager,
+      l10n.jobTitleDevOps,
+      l10n.jobTitleDataScientist,
+      l10n.jobTitleQa,
+      l10n.jobTitleTechLead,
+    ];
+    final departments = [
+      l10n.departmentTech,
+      l10n.departmentProduct,
+      l10n.departmentDesign,
+      l10n.departmentEngineering,
+      l10n.departmentData,
+      l10n.departmentQuality,
+    ];
 
     final jobIndex = userId % jobTitles.length;
     final deptIndex = userId % departments.length;

@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import '../../../../core/constants/app_strings.dart';
 import '../../../../core/providers.dart';
 import '../../../../core/utils/form_validators.dart';
 import '../../../../shared/widgets/loading_widget.dart';
+import '../../../../l10n/app_localizations.dart';
 import '../auth_notifier.dart';
+import '../../../../core/utils/responsive_utils.dart';
 
 class RegisterScreen extends ConsumerWidget {
   const RegisterScreen({super.key});
@@ -13,13 +14,18 @@ class RegisterScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final authState = ref.watch(authNotifierProvider);
-    final uiState = ref.watch(uiStateProvider);
 
     ref.listen<AuthState>(authNotifierProvider, (previous, next) {
       next.when(
         initial: () {},
         loading: () {},
         authenticated: (user) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(AppLocalizations.of(context)!.registrationSuccess),
+              backgroundColor: Colors.green,
+            ),
+          );
           context.go('/home');
         },
         unauthenticated: () {},
@@ -33,9 +39,40 @@ class RegisterScreen extends ConsumerWidget {
 
     return Scaffold(
       body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(24.0),
-          child: _RegisterForm(authState: authState, uiState: uiState),
+        child: ResponsiveBuilder(
+          mobile: Padding(
+            padding: const EdgeInsets.all(24.0),
+            child: _RegisterForm(authState: authState),
+          ),
+          tablet: Center(
+            child: ConstrainedBox(
+              constraints: BoxConstraints(
+                maxWidth: context.isLandscape ? 500 : 400,
+              ),
+              child: Padding(
+                padding: EdgeInsets.all(context.isLandscape ? 48.0 : 32.0),
+                child: Card(
+                  elevation: 4,
+                  child: Padding(
+                    padding: const EdgeInsets.all(32.0),
+                    child: _RegisterForm(authState: authState, isTablet: true),
+                  ),
+                ),
+              ),
+            ),
+          ),
+          desktop: Center(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 500),
+              child: Card(
+                elevation: 8,
+                child: Padding(
+                  padding: const EdgeInsets.all(48.0),
+                  child: _RegisterForm(authState: authState, isTablet: true),
+                ),
+              ),
+            ),
+          ),
         ),
       ),
     );
@@ -44,9 +81,9 @@ class RegisterScreen extends ConsumerWidget {
 
 class _RegisterForm extends ConsumerStatefulWidget {
   final AuthState authState;
-  final UIState uiState;
+  final bool isTablet;
 
-  const _RegisterForm({required this.authState, required this.uiState});
+  const _RegisterForm({required this.authState, this.isTablet = false});
 
   @override
   ConsumerState<_RegisterForm> createState() => _RegisterFormState();
@@ -68,8 +105,8 @@ class _RegisterFormState extends ConsumerState<_RegisterForm> {
     super.dispose();
   }
 
-  void _register() {
-    if (_formKey.currentState!.validate()) {
+  void _handleRegister() {
+    if (_formKey.currentState?.validate() ?? false) {
       ref
           .read(authNotifierProvider.notifier)
           .register(
@@ -82,83 +119,90 @@ class _RegisterFormState extends ConsumerState<_RegisterForm> {
 
   @override
   Widget build(BuildContext context) {
+    final isLoading = widget.authState.maybeWhen(
+      loading: () => true,
+      orElse: () => false,
+    );
+    final uiState = ref.watch(uiStateProvider);
+    final isTablet = widget.isTablet;
+    final l10n = AppLocalizations.of(context)!;
+
     return Form(
       key: _formKey,
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Container(
-            width: 120,
-            height: 120,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [
-                  Theme.of(context).colorScheme.primary,
-                  Theme.of(context).colorScheme.secondary,
-                ],
-              ),
-            ),
-            child: const Icon(Icons.person_add, size: 60, color: Colors.white),
-          ),
-          const SizedBox(height: 32),
+          if (!isTablet) const Spacer(),
 
           Text(
-            AppStrings.registerTitle,
-            style: Theme.of(context).textTheme.headlineLarge?.copyWith(
+            l10n.registerTitle,
+            style: TextStyle(
+              fontSize: isTablet ? 32 : 28,
               fontWeight: FontWeight.bold,
-              color: Theme.of(context).colorScheme.primary,
             ),
+            textAlign: TextAlign.center,
           ),
-          const SizedBox(height: 8),
-          Text(
-            AppStrings.registerSubtitle,
-            style: Theme.of(
-              context,
-            ).textTheme.bodyLarge?.copyWith(color: Colors.grey[600]),
-          ),
-          const SizedBox(height: 48),
 
+          SizedBox(height: isTablet ? 12 : 8),
+
+          Text(
+            l10n.registerSubtitle,
+            style: TextStyle(
+              fontSize: isTablet ? 18 : 16,
+              color: Colors.grey[600],
+            ),
+            textAlign: TextAlign.center,
+          ),
+
+          SizedBox(height: isTablet ? 40 : 32),
+
+          // Email field
           TextFormField(
             controller: _emailController,
-            keyboardType: TextInputType.emailAddress,
-            decoration: const InputDecoration(
-              labelText: AppStrings.emailLabel,
-              hintText: AppStrings.emailHint,
-              prefixIcon: Icon(Icons.email_outlined),
-              border: OutlineInputBorder(),
+            decoration: InputDecoration(
+              labelText: l10n.emailLabel,
+              hintText: l10n.emailHint,
+              labelStyle: TextStyle(fontSize: isTablet ? 18 : 16),
             ),
-            validator: FormValidators.email,
+            style: TextStyle(fontSize: isTablet ? 18 : 16),
+            keyboardType: TextInputType.emailAddress,
+            textInputAction: TextInputAction.next,
+            validator: (value) => FormValidators.email(value, context: context),
+            autovalidateMode: AutovalidateMode.onUserInteraction,
           ),
-          const SizedBox(height: 16),
 
+          SizedBox(height: isTablet ? 24 : 16),
+
+          // Full name field
           TextFormField(
             controller: _fullNameController,
-            keyboardType: TextInputType.name,
-            decoration: const InputDecoration(
-              labelText: AppStrings.fullNameLabel,
-              hintText: AppStrings.fullNameHint,
-              prefixIcon: Icon(Icons.person_outlined),
-              border: OutlineInputBorder(),
+            decoration: InputDecoration(
+              labelText: l10n.fullNameLabel,
+              hintText: l10n.fullNameHint,
+              labelStyle: TextStyle(fontSize: isTablet ? 18 : 16),
             ),
-            validator: FormValidators.fullName,
+            style: TextStyle(fontSize: isTablet ? 18 : 16),
+            textInputAction: TextInputAction.next,
+            validator: (value) =>
+                FormValidators.fullName(value, context: context),
+            autovalidateMode: AutovalidateMode.onUserInteraction,
           ),
-          const SizedBox(height: 16),
 
+          SizedBox(height: isTablet ? 24 : 16),
+
+          // Password field
           TextFormField(
             controller: _passwordController,
-            obscureText: widget.uiState.registerPasswordObscured,
             decoration: InputDecoration(
-              labelText: AppStrings.passwordLabel,
-              hintText: AppStrings.passwordHint,
-              prefixIcon: const Icon(Icons.lock_outlined),
+              labelText: l10n.passwordLabel,
+              hintText: l10n.passwordHint,
               suffixIcon: IconButton(
                 icon: Icon(
-                  widget.uiState.registerPasswordObscured
+                  uiState.registerPasswordObscured
                       ? Icons.visibility
                       : Icons.visibility_off,
+                  size: isTablet ? 24 : 20,
                 ),
                 onPressed: () {
                   ref
@@ -166,24 +210,30 @@ class _RegisterFormState extends ConsumerState<_RegisterForm> {
                       .toggleRegisterPasswordVisibility();
                 },
               ),
-              border: const OutlineInputBorder(),
+              labelStyle: TextStyle(fontSize: isTablet ? 18 : 16),
             ),
-            validator: FormValidators.password,
+            style: TextStyle(fontSize: isTablet ? 18 : 16),
+            obscureText: uiState.registerPasswordObscured,
+            textInputAction: TextInputAction.next,
+            validator: (value) =>
+                FormValidators.password(value, context: context),
+            autovalidateMode: AutovalidateMode.onUserInteraction,
           ),
-          const SizedBox(height: 16),
 
+          SizedBox(height: isTablet ? 24 : 16),
+
+          // Confirm password field
           TextFormField(
             controller: _confirmPasswordController,
-            obscureText: widget.uiState.registerConfirmPasswordObscured,
             decoration: InputDecoration(
-              labelText: AppStrings.confirmPasswordLabel,
-              hintText: AppStrings.confirmPasswordHint,
-              prefixIcon: const Icon(Icons.lock_outlined),
+              labelText: l10n.confirmPasswordLabel,
+              hintText: l10n.confirmPasswordHint,
               suffixIcon: IconButton(
                 icon: Icon(
-                  widget.uiState.registerConfirmPasswordObscured
+                  uiState.registerConfirmPasswordObscured
                       ? Icons.visibility
                       : Icons.visibility_off,
+                  size: isTablet ? 24 : 20,
                 ),
                 onPressed: () {
                   ref
@@ -191,38 +241,36 @@ class _RegisterFormState extends ConsumerState<_RegisterForm> {
                       .toggleRegisterConfirmPasswordVisibility();
                 },
               ),
-              border: const OutlineInputBorder(),
+              labelStyle: TextStyle(fontSize: isTablet ? 18 : 16),
             ),
-            validator: (value) =>
-                FormValidators.confirmPassword(value, _passwordController.text),
-          ),
-          const SizedBox(height: 24),
-
-          SizedBox(
-            width: double.infinity,
-            height: 50,
-            child: widget.authState.when(
-              initial: () => _buildRegisterButton(),
-              loading: () => const LoadingWidget(),
-              authenticated: (user) => _buildRegisterButton(),
-              unauthenticated: () => _buildRegisterButton(),
-              error: (message) => _buildRegisterButton(),
+            style: TextStyle(fontSize: isTablet ? 18 : 16),
+            obscureText: uiState.registerConfirmPasswordObscured,
+            textInputAction: TextInputAction.done,
+            validator: (value) => FormValidators.confirmPassword(
+              value,
+              _passwordController.text,
+              context: context,
             ),
+            autovalidateMode: AutovalidateMode.onUserInteraction,
+            onFieldSubmitted: (_) => _handleRegister(),
           ),
-          const SizedBox(height: 16),
 
+          SizedBox(height: isTablet ? 32 : 24),
+
+          // Login link
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Text(
-                AppStrings.hasAccountQuestion,
-                style: Theme.of(context).textTheme.bodyMedium,
+                l10n.hasAccountQuestion,
+                style: TextStyle(fontSize: isTablet ? 16 : 14),
               ),
               GestureDetector(
-                onTap: () => context.go('/login'),
+                onTap: !isLoading ? () => context.go('/login') : null,
                 child: Text(
-                  AppStrings.loginAction,
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  l10n.loginAction,
+                  style: TextStyle(
+                    fontSize: isTablet ? 16 : 14,
                     color: Theme.of(context).colorScheme.primary,
                     fontWeight: FontWeight.bold,
                   ),
@@ -230,22 +278,30 @@ class _RegisterFormState extends ConsumerState<_RegisterForm> {
               ),
             ],
           ),
-        ],
-      ),
-    );
-  }
 
-  Widget _buildRegisterButton() {
-    return ElevatedButton(
-      onPressed: _register,
-      style: ElevatedButton.styleFrom(
-        backgroundColor: Theme.of(context).colorScheme.primary,
-        foregroundColor: Colors.white,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-      ),
-      child: const Text(
-        AppStrings.registerButton,
-        style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+          SizedBox(height: isTablet ? 24 : 16),
+
+          // Register button
+          SizedBox(
+            height: isTablet ? 56 : 48,
+            child: ElevatedButton(
+              onPressed: !isLoading ? _handleRegister : null,
+              style: ElevatedButton.styleFrom(
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(isTablet ? 12 : 8),
+                ),
+              ),
+              child: isLoading
+                  ? const LoadingWidget(size: 24)
+                  : Text(
+                      l10n.registerButton,
+                      style: TextStyle(fontSize: isTablet ? 18 : 16),
+                    ),
+            ),
+          ),
+
+          if (!isTablet) const Spacer(flex: 2),
+        ],
       ),
     );
   }

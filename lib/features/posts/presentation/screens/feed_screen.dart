@@ -4,6 +4,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:intl/intl.dart';
 import 'package:share_plus/share_plus.dart';
 import '../../../../core/constants/app_strings.dart';
+import '../../../../l10n/app_localizations.dart';
 import '../../../../shared/widgets/loading_widget.dart';
 import '../../../../core/providers.dart';
 import '../../../auth/presentation/auth_notifier.dart';
@@ -46,10 +47,11 @@ class _FeedScreenState extends ConsumerState<FeedScreen>
     await ref.read(postsNotifierProvider.notifier).loadPosts(refresh: true);
   }
 
-  void _sharePost(String content, String authorName) {
+  void _sharePost(BuildContext context, String content, String authorName) {
+    final l10n = AppLocalizations.of(context)!;
     final shareText =
-        '${AppStrings.sharedBy} $authorName ${AppStrings.onTeamUp}:\n\n$content';
-    Share.share(shareText, subject: AppStrings.teamUpPost);
+        '${l10n.sharedBy} $authorName ${l10n.onTeamUp}:\n\n$content';
+    Share.share(shareText, subject: l10n.teamUpPost);
   }
 
   void _toggleComments(String postId) {
@@ -102,8 +104,8 @@ class _FeedScreenState extends ConsumerState<FeedScreen>
 
     return Scaffold(
       body: postsState.when(
-        initial: () => const LoadingWidget(message: AppStrings.loadingPosts),
-        loading: () => const LoadingWidget(message: AppStrings.loadingPosts),
+        initial: () => const LoadingWidget(),
+        loading: () => const LoadingWidget(),
         loaded: (posts) => RefreshIndicator(
           onRefresh: () async {
             if (mounted) {
@@ -113,11 +115,11 @@ class _FeedScreenState extends ConsumerState<FeedScreen>
           child: posts.isEmpty
               ? ListView(
                   physics: const AlwaysScrollableScrollPhysics(),
-                  children: const [
+                  children: [
                     SizedBox(height: 200),
                     Center(
                       child: Text(
-                        AppStrings.noPostsFound,
+                        AppLocalizations.of(context)!.noPostsFound,
                         style: TextStyle(fontSize: 16, color: Colors.grey),
                       ),
                     ),
@@ -135,7 +137,7 @@ class _FeedScreenState extends ConsumerState<FeedScreen>
               const Icon(Icons.error_outline, size: 64, color: Colors.red),
               const SizedBox(height: 16),
               Text(
-                AppStrings.errorLoadingPosts,
+                AppLocalizations.of(context)!.errorLoadingPosts,
                 style: Theme.of(context).textTheme.headlineSmall,
               ),
               const SizedBox(height: 8),
@@ -153,7 +155,7 @@ class _FeedScreenState extends ConsumerState<FeedScreen>
                         .loadPosts(refresh: true);
                   }
                 },
-                child: const Text(AppStrings.tryAgainButton),
+                child: Text(AppLocalizations.of(context)!.tryAgainButton),
               ),
             ],
           ),
@@ -186,7 +188,7 @@ class _FeedScreenState extends ConsumerState<FeedScreen>
                 ),
               ),
           onToggleComments: () => _toggleComments(post.id),
-          onShare: () => _sharePost(post.content, post.authorName),
+          onShare: () => _sharePost(context, post.content, post.authorName),
           onSubmitComment: () => _submitComment(post.id),
           commentController: ref
               .read(commentControllersProvider.notifier)
@@ -229,7 +231,7 @@ class _FeedScreenState extends ConsumerState<FeedScreen>
                 ),
               ),
           onToggleComments: () => _toggleComments(post.id),
-          onShare: () => _sharePost(post.content, post.authorName),
+          onShare: () => _sharePost(context, post.content, post.authorName),
           onSubmitComment: () => _submitComment(post.id),
           commentController: ref
               .read(commentControllersProvider.notifier)
@@ -302,7 +304,7 @@ class _PostCard extends StatelessWidget {
                         ),
                       ),
                       Text(
-                        _formatDate(post.createdAt),
+                        _formatDate(context, post.createdAt),
                         style: TextStyle(
                           color: Colors.grey[600],
                           fontSize: isTablet ? 14 : 12,
@@ -422,7 +424,7 @@ class _PostCard extends StatelessWidget {
 
               if (post.comments.isNotEmpty) ...[
                 Text(
-                  AppStrings.comments,
+                  AppLocalizations.of(context)!.commentsLabel,
                   style: TextStyle(
                     fontWeight: FontWeight.bold,
                     fontSize: isTablet ? 16 : 14,
@@ -459,7 +461,7 @@ class _PostCard extends StatelessWidget {
                                 ),
                                 const SizedBox(width: 8),
                                 Text(
-                                  _formatDate(comment.createdAt),
+                                  _formatDate(context, comment.createdAt),
                                   style: TextStyle(
                                     color: Colors.grey[600],
                                     fontSize: isTablet ? 12 : 10,
@@ -489,7 +491,9 @@ class _PostCard extends StatelessWidget {
                       maxLength: 100,
                       maxLines: null,
                       decoration: InputDecoration(
-                        hintText: AppStrings.writeComment,
+                        hintText: AppLocalizations.of(
+                          context,
+                        )!.writeCommentHint,
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(20),
                         ),
@@ -519,18 +523,18 @@ class _PostCard extends StatelessWidget {
     );
   }
 
-  String _formatDate(DateTime date) {
+  String _formatDate(BuildContext context, DateTime date) {
     final now = DateTime.now();
     final difference = now.difference(date);
 
     if (difference.inDays > 0) {
       return DateFormat(AppStrings.dateFormat).format(date);
     } else if (difference.inHours > 0) {
-      return '${difference.inHours}${AppStrings.hoursAgo}';
+      return '${difference.inHours}${AppLocalizations.of(context)!.hoursAgo}';
     } else if (difference.inMinutes > 0) {
-      return '${difference.inMinutes}${AppStrings.minutesAgo}';
+      return '${difference.inMinutes}${AppLocalizations.of(context)!.minutesAgo}';
     } else {
-      return AppStrings.now;
+      return AppLocalizations.of(context)!.now;
     }
   }
 }
