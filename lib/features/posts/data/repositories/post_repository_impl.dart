@@ -8,6 +8,7 @@ import '../../../../core/storage/local_storage.dart';
 import '../../../users/domain/entities/user.dart';
 import '../../../users/domain/repositories/user_repository.dart';
 import '../../domain/entities/post.dart';
+import '../../domain/entities/comment.dart';
 import '../../domain/repositories/post_repository.dart';
 
 class PostRepositoryImpl implements PostRepository {
@@ -79,6 +80,109 @@ class PostRepositoryImpl implements PostRepository {
     }
   }
 
+  @override
+  Future<Either<Failure, Post>> likePost(String postId, String userId) async {
+    try {
+      final postsResult = await getCachedPosts();
+      final posts = postsResult.fold(
+        (failure) => <Post>[],
+        (postsList) => postsList,
+      );
+
+      final postIndex = posts.indexWhere((post) => post.id == postId);
+      if (postIndex == -1) {
+        return Left(CacheFailure('Post not found'));
+      }
+
+      final post = posts[postIndex];
+      final updatedPost = post.copyWith(
+        likedByUserIds: [...post.likedByUserIds, userId],
+        likesCount: post.likesCount + 1,
+      );
+
+      posts[postIndex] = updatedPost;
+      await cachePosts(posts);
+
+      return Right(updatedPost);
+    } catch (e) {
+      return Left(CacheFailure(e.toString()));
+    }
+  }
+
+  @override
+  Future<Either<Failure, Post>> unlikePost(String postId, String userId) async {
+    try {
+      final postsResult = await getCachedPosts();
+      final posts = postsResult.fold(
+        (failure) => <Post>[],
+        (postsList) => postsList,
+      );
+
+      final postIndex = posts.indexWhere((post) => post.id == postId);
+      if (postIndex == -1) {
+        return Left(CacheFailure('Post not found'));
+      }
+
+      final post = posts[postIndex];
+      final updatedLikedBy = post.likedByUserIds
+          .where((id) => id != userId)
+          .toList();
+      final updatedPost = post.copyWith(
+        likedByUserIds: updatedLikedBy,
+        likesCount: updatedLikedBy.length,
+      );
+
+      posts[postIndex] = updatedPost;
+      await cachePosts(posts);
+
+      return Right(updatedPost);
+    } catch (e) {
+      return Left(CacheFailure(e.toString()));
+    }
+  }
+
+  @override
+  Future<Either<Failure, Post>> addComment(
+    String postId,
+    String content,
+    String userId,
+    String userName,
+    String userAvatar,
+  ) async {
+    try {
+      final postsResult = await getCachedPosts();
+      final posts = postsResult.fold(
+        (failure) => <Post>[],
+        (postsList) => postsList,
+      );
+
+      final postIndex = posts.indexWhere((post) => post.id == postId);
+      if (postIndex == -1) {
+        return Left(CacheFailure('Post not found'));
+      }
+
+      final post = posts[postIndex];
+      final comment = Comment(
+        id: DateTime.now().millisecondsSinceEpoch.toString(),
+        postId: postId,
+        content: content,
+        authorId: userId,
+        authorName: userName,
+        authorAvatar: userAvatar,
+        createdAt: DateTime.now(),
+      );
+
+      final updatedPost = post.copyWith(comments: [...post.comments, comment]);
+
+      posts[postIndex] = updatedPost;
+      await cachePosts(posts);
+
+      return Right(updatedPost);
+    } catch (e) {
+      return Left(CacheFailure(e.toString()));
+    }
+  }
+
   Future<List<Post>> _generateFakePostsWithRealUsers(List<User> users) async {
     final faker = Faker();
     final posts = <Post>[];
@@ -105,12 +209,28 @@ class PostRepositoryImpl implements PostRepository {
               ? 'https://picsum.photos/400/300?random=$i'
               : null,
           likesCount: faker.randomGenerator.integer(100),
+          likedByUserIds: _generateRandomLikes(users, faker),
           tags: _generatePostTags(faker),
+          comments: [],
         ),
       );
     }
 
     return posts..sort((a, b) => b.createdAt.compareTo(a.createdAt));
+  }
+
+  List<String> _generateRandomLikes(List<User> users, Faker faker) {
+    final likeCount = faker.randomGenerator.integer(10);
+    final likedBy = <String>[];
+
+    for (int i = 0; i < likeCount; i++) {
+      final user = users[faker.randomGenerator.integer(users.length)];
+      if (!likedBy.contains(user.id.toString())) {
+        likedBy.add(user.id.toString());
+      }
+    }
+
+    return likedBy;
   }
 
   String _generatePostContent(Faker faker, User user) {

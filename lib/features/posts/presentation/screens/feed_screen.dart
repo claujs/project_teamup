@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:intl/intl.dart';
+import 'package:share_plus/share_plus.dart';
 import '../../../../shared/widgets/loading_widget.dart';
+import '../../../auth/presentation/auth_notifier.dart';
 import '../posts_notifier.dart';
 
 class FeedScreen extends ConsumerStatefulWidget {
@@ -14,6 +16,9 @@ class FeedScreen extends ConsumerStatefulWidget {
 
 class _FeedScreenState extends ConsumerState<FeedScreen>
     with WidgetsBindingObserver {
+  final Set<String> _expandedPosts = <String>{};
+  final Map<String, TextEditingController> _commentControllers = {};
+
   @override
   void initState() {
     super.initState();
@@ -25,6 +30,10 @@ class _FeedScreenState extends ConsumerState<FeedScreen>
 
   @override
   void dispose() {
+    // Dispose todos os controllers
+    for (final controller in _commentControllers.values) {
+      controller.dispose();
+    }
     WidgetsBinding.instance.removeObserver(this);
     super.dispose();
   }
@@ -42,9 +51,57 @@ class _FeedScreenState extends ConsumerState<FeedScreen>
     await ref.read(postsNotifierProvider.notifier).loadPosts(refresh: true);
   }
 
+  void _sharePost(String content, String authorName) {
+    final shareText = 'Compartilhado por $authorName no TeamUp:\n\n$content';
+    Share.share(shareText, subject: 'Post do TeamUp');
+  }
+
+  void _toggleComments(String postId) {
+    setState(() {
+      if (_expandedPosts.contains(postId)) {
+        _expandedPosts.remove(postId);
+        _commentControllers[postId]?.dispose();
+        _commentControllers.remove(postId);
+      } else {
+        _expandedPosts.add(postId);
+        _commentControllers[postId] = TextEditingController();
+      }
+    });
+  }
+
+  void _submitComment(String postId) {
+    final authState = ref.read(authNotifierProvider);
+    final controller = _commentControllers[postId];
+
+    if (controller == null) return;
+
+    authState.when(
+      initial: () {},
+      loading: () {},
+      authenticated: (user) {
+        final content = controller.text.trim();
+        if (content.isNotEmpty) {
+          ref
+              .read(postsNotifierProvider.notifier)
+              .addComment(
+                postId,
+                content,
+                user.id,
+                '${user.firstName ?? ''} ${user.lastName ?? ''}',
+                '', // Avatar vazio por enquanto
+              );
+          controller.clear();
+        }
+      },
+      unauthenticated: () {},
+      error: (message) {},
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final postsState = ref.watch(postsNotifierProvider);
+    final authState = ref.watch(authNotifierProvider);
 
     return Scaffold(
       body: postsState.when(
@@ -64,6 +121,13 @@ class _FeedScreenState extends ConsumerState<FeedScreen>
                   itemCount: posts.length,
                   itemBuilder: (context, index) {
                     final post = posts[index];
+                    final currentUserId = authState.maybeWhen(
+                      authenticated: (user) => user.id,
+                      orElse: () => '',
+                    );
+                    final isLiked = post.likedByUserIds.contains(currentUserId);
+                    final isExpanded = _expandedPosts.contains(post.id);
+
                     return Card(
                       margin: const EdgeInsets.only(bottom: 16),
                       child: Padding(
@@ -171,24 +235,161 @@ class _FeedScreenState extends ConsumerState<FeedScreen>
                             // Actions
                             Row(
                               children: [
+                                // Like button
                                 IconButton(
-                                  icon: const Icon(Icons.favorite_border),
-                                  onPressed: () {},
+                                  icon: Icon(
+                                    isLiked
+                                        ? Icons.favorite
+                                        : Icons.favorite_border,
+                                    color: isLiked ? Colors.red : null,
+                                  ),
+                                  onPressed: authState.maybeWhen(
+                                    authenticated: (user) =>
+                                        () => ref
+                                            .read(
+                                              postsNotifierProvider.notifier,
+                                            )
+                                            .likePost(post.id, user.id),
+                                    orElse: () => null,
+                                  ),
                                 ),
                                 Text('${post.likesCount}'),
                                 const SizedBox(width: 16),
+
+                                // Comment button
                                 IconButton(
-                                  icon: const Icon(Icons.comment_outlined),
-                                  onPressed: () {},
+                                  icon: Icon(
+                                    isExpanded
+                                        ? Icons.comment
+                                        : Icons.comment_outlined,
+                                    color: isExpanded
+                                        ? Theme.of(context).colorScheme.primary
+                                        : null,
+                                  ),
+                                  onPressed: authState.maybeWhen(
+                                    authenticated: (user) =>
+                                        () => _toggleComments(post.id),
+                                    orElse: () => null,
+                                  ),
                                 ),
-                                const Text('0'),
+                                Text('${post.comments.length}'),
                                 const SizedBox(width: 16),
+
+                                // Share button
                                 IconButton(
                                   icon: const Icon(Icons.share_outlined),
-                                  onPressed: () {},
+                                  onPressed: () =>
+                                      _sharePost(post.content, post.authorName),
                                 ),
                               ],
                             ),
+
+                            // Expanded comments section
+                            if (isExpanded) ...[
+                              const Divider(height: 24),
+
+                              // Existing comments
+                              if (post.comments.isNotEmpty) ...[
+                                const Text(
+                                  'Comentários:',
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 14,
+                                  ),
+                                ),
+                                const SizedBox(height: 8),
+                                ...post.comments
+                                    .map(
+                                      (comment) => Container(
+                                        margin: const EdgeInsets.only(
+                                          bottom: 12,
+                                        ),
+                                        padding: const EdgeInsets.all(12),
+                                        decoration: BoxDecoration(
+                                          color: Colors.grey[100],
+                                          borderRadius: BorderRadius.circular(
+                                            8,
+                                          ),
+                                        ),
+                                        child: Column(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
+                                          children: [
+                                            Row(
+                                              children: [
+                                                Text(
+                                                  comment.authorName,
+                                                  style: const TextStyle(
+                                                    fontWeight: FontWeight.bold,
+                                                    fontSize: 12,
+                                                  ),
+                                                ),
+                                                const SizedBox(width: 8),
+                                                Text(
+                                                  _formatDate(
+                                                    comment.createdAt,
+                                                  ),
+                                                  style: TextStyle(
+                                                    color: Colors.grey[600],
+                                                    fontSize: 10,
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                            const SizedBox(height: 4),
+                                            Text(
+                                              comment.content,
+                                              style: const TextStyle(
+                                                fontSize: 13,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    )
+                                    .toList(),
+                                const SizedBox(height: 12),
+                              ],
+
+                              // Comment input
+                              Row(
+                                children: [
+                                  Expanded(
+                                    child: TextField(
+                                      controller: _commentControllers[post.id],
+                                      maxLength: 100,
+                                      maxLines: null,
+                                      decoration: InputDecoration(
+                                        hintText: 'Escreva um comentário...',
+                                        border: OutlineInputBorder(
+                                          borderRadius: BorderRadius.circular(
+                                            20,
+                                          ),
+                                        ),
+                                        contentPadding:
+                                            const EdgeInsets.symmetric(
+                                              horizontal: 16,
+                                              vertical: 8,
+                                            ),
+                                        counterText: '',
+                                      ),
+                                      textCapitalization:
+                                          TextCapitalization.sentences,
+                                      onSubmitted: (_) =>
+                                          _submitComment(post.id),
+                                    ),
+                                  ),
+                                  const SizedBox(width: 8),
+                                  IconButton(
+                                    icon: const Icon(Icons.send),
+                                    onPressed: () => _submitComment(post.id),
+                                    color: Theme.of(
+                                      context,
+                                    ).colorScheme.primary,
+                                  ),
+                                ],
+                              ),
+                            ],
                           ],
                         ),
                       ),
