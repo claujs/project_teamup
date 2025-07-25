@@ -119,7 +119,12 @@ class UserRepositoryImpl implements UserRepository {
 
         for (int i = 0; i < usersList.length; i++) {
           try {
-            final user = User.fromJson(usersList[i]);
+            // Garantir que o Map tem o tipo correto
+            final userData = usersList[i];
+            final map = userData is Map<String, dynamic>
+                ? userData
+                : Map<String, dynamic>.from(userData as Map);
+            final user = User.fromJson(map);
             users.add(user);
           } catch (e) {
             debugPrint('Error parsing user at index $i: $e');

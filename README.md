@@ -163,6 +163,71 @@ flutter test --coverage
 - **Error Handling**: Tratamento elegante de erros
 - **Pull-to-Refresh**: Atualização intuitiva de dados
 
+### Responsividade Avançada
+
+O app foi desenvolvido com responsividade avançada para tablets, oferecendo layouts adaptativos que aproveitam melhor o espaço disponível em telas maiores:
+
+#### 🎨 Recursos de Responsividade
+
+**1. Layouts Adaptativos**
+
+- **Mobile**: Layout tradicional com navegação inferior
+- **Tablet Portrait**: NavigationBar expandida e conteúdo mais espaçoso
+- **Tablet Landscape**: NavigationRail lateral com layout Master-Detail
+
+**2. Breakpoints Inteligentes**
+
+```dart
+- Mobile: < 600px
+- Tablet: 600px - 900px
+- Desktop: > 900px
+```
+
+**3. Componentes Responsivos**
+
+- **ResponsiveBuilder**: Renderiza diferentes layouts baseado no tamanho da tela
+- **ResponsiveContainer**: Aplica constraints e padding responsivos automaticamente
+- **ResponsiveGrid**: Grid adaptativo que ajusta número de colunas
+- **ResponsiveMasterDetail**: Layout Master-Detail para tablets em landscape
+
+**4. Exemplos de Uso**
+
+```dart
+// Widget com layouts diferentes para cada tamanho
+ResponsiveBuilder(
+  mobile: MobileLayout(),
+  tablet: TabletLayout(),
+  desktop: DesktopLayout(),
+)
+
+// Container com largura máxima responsiva
+ResponsiveContainer(
+  child: MyContent(),
+)
+
+// Grid que se adapta ao tamanho da tela
+ResponsiveGrid(
+  children: items,
+  spacing: 16,
+)
+```
+
+**5. Experiência do Usuário**
+
+- **Feed**: Grid de posts em tablets, lista em mobile
+- **Usuários**: Cards em grid para tablets, lista para mobile
+- **Navegação**: NavigationRail em tablets landscape para mais espaço útil
+- **Formulários**: Campos maiores e melhor espaçamento em tablets
+- **Master-Detail**: Visualização lado a lado em tablets landscape
+
+#### 📱 Testando Responsividade
+
+Para testar os diferentes layouts:
+
+1. **No Chrome DevTools**: Use o modo dispositivo e teste diferentes tamanhos
+2. **Em Dispositivos Físicos**: Teste em tablets reais para melhor experiência
+3. **Orientação**: Gire o dispositivo para ver transições entre layouts
+
 ## 📱 Estrutura de Navegação
 
 ```

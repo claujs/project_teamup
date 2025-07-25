@@ -25,13 +25,19 @@ class FavoritesNotifier extends StateNotifier<FavoritesState> {
   Future<void> loadFavorites() async {
     state = const FavoritesState.loading();
     try {
+      // Simula delay de API
+      await Future.delayed(const Duration(seconds: 3));
+
       final cached = await _localStorage.getObject<List<dynamic>>(
         _favoritesKey,
       );
       final favorites =
-          cached
-              ?.map((json) => User.fromJson(json as Map<String, dynamic>))
-              .toList() ??
+          cached?.map((json) {
+            final map = json is Map<String, dynamic>
+                ? json
+                : Map<String, dynamic>.from(json as Map);
+            return User.fromJson(map);
+          }).toList() ??
           [];
       state = FavoritesState.loaded(favorites);
     } catch (e) {

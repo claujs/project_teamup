@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/constants/app_strings.dart';
 import '../../../../core/providers.dart';
+import '../../../../core/utils/form_validators.dart';
 import '../../../../shared/widgets/loading_widget.dart';
 import '../auth_notifier.dart';
 
@@ -129,17 +130,7 @@ class _RegisterFormState extends ConsumerState<_RegisterForm> {
               prefixIcon: Icon(Icons.email_outlined),
               border: OutlineInputBorder(),
             ),
-            validator: (value) {
-              if (value == null || value.isEmpty) {
-                return AppStrings.emailRequired;
-              }
-              if (!RegExp(
-                r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$',
-              ).hasMatch(value)) {
-                return AppStrings.emailInvalid;
-              }
-              return null;
-            },
+            validator: FormValidators.email,
           ),
           const SizedBox(height: 16),
 
@@ -152,15 +143,7 @@ class _RegisterFormState extends ConsumerState<_RegisterForm> {
               prefixIcon: Icon(Icons.person_outlined),
               border: OutlineInputBorder(),
             ),
-            validator: (value) {
-              if (value == null || value.isEmpty) {
-                return AppStrings.fullNameRequired;
-              }
-              if (value.trim().split(' ').length < 2) {
-                return AppStrings.fullNameFormat;
-              }
-              return null;
-            },
+            validator: FormValidators.fullName,
           ),
           const SizedBox(height: 16),
 
@@ -185,15 +168,7 @@ class _RegisterFormState extends ConsumerState<_RegisterForm> {
               ),
               border: const OutlineInputBorder(),
             ),
-            validator: (value) {
-              if (value == null || value.isEmpty) {
-                return AppStrings.passwordRequired;
-              }
-              if (value.length < 6) {
-                return AppStrings.passwordMinLength;
-              }
-              return null;
-            },
+            validator: FormValidators.password,
           ),
           const SizedBox(height: 16),
 
@@ -218,15 +193,8 @@ class _RegisterFormState extends ConsumerState<_RegisterForm> {
               ),
               border: const OutlineInputBorder(),
             ),
-            validator: (value) {
-              if (value == null || value.isEmpty) {
-                return AppStrings.confirmPasswordRequired;
-              }
-              if (value != _passwordController.text) {
-                return AppStrings.passwordMismatch;
-              }
-              return null;
-            },
+            validator: (value) =>
+                FormValidators.confirmPassword(value, _passwordController.text),
           ),
           const SizedBox(height: 24),
 

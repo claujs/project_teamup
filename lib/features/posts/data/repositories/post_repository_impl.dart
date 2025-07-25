@@ -53,9 +53,13 @@ class PostRepositoryImpl implements PostRepository {
       );
 
       if (cachedData != null) {
-        final posts = (cachedData['posts'] as List)
-            .map((post) => Post.fromJson(post))
-            .toList();
+        final posts = (cachedData['posts'] as List).map((post) {
+          // Garantir que o Map tem o tipo correto
+          final map = post is Map<String, dynamic>
+              ? post
+              : Map<String, dynamic>.from(post as Map);
+          return Post.fromJson(map);
+        }).toList();
         return Right(posts);
       } else {
         return Left(CacheFailure('No cached posts found'));

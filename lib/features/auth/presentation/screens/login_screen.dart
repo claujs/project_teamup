@@ -3,9 +3,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/constants/app_strings.dart';
 import '../../../../core/providers.dart';
+import '../../../../core/utils/form_validators.dart';
 import '../../../../shared/widgets/loading_widget.dart';
 import '../../../../l10n/app_localizations.dart';
 import '../auth_notifier.dart';
+import '../../../../core/utils/responsive_utils.dart';
 
 class LoginScreen extends ConsumerWidget {
   const LoginScreen({super.key});
@@ -34,12 +36,36 @@ class LoginScreen extends ConsumerWidget {
 
     return Scaffold(
       body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(24.0),
-          child: _LoginForm(
-            authState: authState,
-            uiState: uiState,
-            credentialsState: credentialsState,
+        child: ResponsiveBuilder(
+          mobile: Padding(
+            padding: const EdgeInsets.all(24.0),
+            child: _LoginForm(
+              authState: authState,
+              uiState: uiState,
+              credentialsState: credentialsState,
+            ),
+          ),
+          tablet: Center(
+            child: ConstrainedBox(
+              constraints: BoxConstraints(
+                maxWidth: context.isLandscape ? 500 : 400,
+              ),
+              child: Padding(
+                padding: EdgeInsets.all(context.isLandscape ? 48.0 : 32.0),
+                child: Card(
+                  elevation: 4,
+                  child: Padding(
+                    padding: const EdgeInsets.all(32.0),
+                    child: _LoginForm(
+                      authState: authState,
+                      uiState: uiState,
+                      credentialsState: credentialsState,
+                      isTablet: true,
+                    ),
+                  ),
+                ),
+              ),
+            ),
           ),
         ),
       ),
@@ -51,11 +77,13 @@ class _LoginForm extends ConsumerStatefulWidget {
   final AuthState authState;
   final UIState uiState;
   final CredentialsState credentialsState;
+  final bool isTablet;
 
   const _LoginForm({
     required this.authState,
     required this.uiState,
     required this.credentialsState,
+    this.isTablet = false,
   });
 
   @override
@@ -64,25 +92,15 @@ class _LoginForm extends ConsumerStatefulWidget {
 
 class _LoginFormState extends ConsumerState<_LoginForm> {
   final _formKey = GlobalKey<FormState>();
-  late final TextEditingController _emailController;
-  late final TextEditingController _passwordController;
+  final _emailController = TextEditingController();
+  final _passwordController = TextEditingController();
 
   @override
   void initState() {
     super.initState();
-    _emailController = TextEditingController();
-    _passwordController = TextEditingController();
-  }
-
-  @override
-  void didUpdateWidget(_LoginForm oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (widget.credentialsState.email != oldWidget.credentialsState.email ||
-        widget.credentialsState.password !=
-            oldWidget.credentialsState.password) {
-      _emailController.text = widget.credentialsState.email;
-      _passwordController.text = widget.credentialsState.password;
-    }
+    // Preencher credenciais salvas se existirem
+    _emailController.text = widget.credentialsState.email;
+    _passwordController.text = widget.credentialsState.password;
   }
 
   @override
@@ -92,37 +110,34 @@ class _LoginFormState extends ConsumerState<_LoginForm> {
     super.dispose();
   }
 
-  void _login() {
+  void _handleLogin() {
     if (_formKey.currentState!.validate()) {
       ref
           .read(authNotifierProvider.notifier)
-          .login(_emailController.text, _passwordController.text);
-    }
-  }
-
-  Future<void> _clearSavedCredentials() async {
-    await ref.read(credentialsProvider.notifier).clearSavedCredentials();
-
-    if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text(AppStrings.credentialsCleared),
-          duration: Duration(seconds: 2),
-        ),
-      );
+          .login(_emailController.text.trim(), _passwordController.text.trim());
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final isLoading = widget.authState.maybeWhen(
+      loading: () => true,
+      orElse: () => false,
+    );
+    final isTablet = widget.isTablet;
+
     return Form(
       key: _formKey,
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
+          if (!isTablet) const Spacer(),
+
+          // Logo
           Container(
-            width: 120,
-            height: 120,
+            width: isTablet ? 100 : 80,
+            height: isTablet ? 100 : 80,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
               gradient: LinearGradient(
@@ -134,61 +149,68 @@ class _LoginFormState extends ConsumerState<_LoginForm> {
                 ],
               ),
             ),
-            child: const Icon(Icons.people, size: 60, color: Colors.white),
+            child: Icon(
+              Icons.people,
+              size: isTablet ? 60 : 48,
+              color: Colors.white,
+            ),
           ),
-          const SizedBox(height: 32),
+
+          SizedBox(height: isTablet ? 40 : 32),
 
           Text(
             AppStrings.loginTitle,
-            style: Theme.of(context).textTheme.headlineLarge?.copyWith(
+            style: TextStyle(
+              fontSize: isTablet ? 32 : 28,
               fontWeight: FontWeight.bold,
-              color: Theme.of(context).colorScheme.primary,
             ),
+            textAlign: TextAlign.center,
           ),
-          const SizedBox(height: 8),
+
+          SizedBox(height: isTablet ? 12 : 8),
+
           Text(
             AppStrings.loginSubtitle,
-            style: Theme.of(
-              context,
-            ).textTheme.bodyLarge?.copyWith(color: Colors.grey[600]),
+            style: TextStyle(
+              fontSize: isTablet ? 18 : 16,
+              color: Colors.grey[600],
+            ),
+            textAlign: TextAlign.center,
           ),
-          const SizedBox(height: 48),
 
+          SizedBox(height: isTablet ? 48 : 40),
+
+          // Email field
           TextFormField(
             controller: _emailController,
-            keyboardType: TextInputType.emailAddress,
+            enabled: !isLoading,
             decoration: InputDecoration(
               labelText: AppLocalizations.of(context)!.email,
-              hintText: AppStrings.emailHint,
-              prefixIcon: const Icon(Icons.email_outlined),
-              border: const OutlineInputBorder(),
+              prefixIcon: Icon(Icons.email, size: isTablet ? 24 : 20),
+              labelStyle: TextStyle(fontSize: isTablet ? 18 : 16),
             ),
-            validator: (value) {
-              if (value == null || value.isEmpty) {
-                return AppStrings.emailRequired;
-              }
-              if (!RegExp(
-                r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$',
-              ).hasMatch(value)) {
-                return AppStrings.emailInvalid;
-              }
-              return null;
-            },
+            style: TextStyle(fontSize: isTablet ? 18 : 16),
+            keyboardType: TextInputType.emailAddress,
+            textInputAction: TextInputAction.next,
+            validator: FormValidators.email,
+            autovalidateMode: AutovalidateMode.onUserInteraction,
           ),
-          const SizedBox(height: 16),
 
+          const SizedBox(height: 24),
+
+          // Password field
           TextFormField(
             controller: _passwordController,
-            obscureText: widget.uiState.loginPasswordObscured,
+            enabled: !isLoading,
             decoration: InputDecoration(
               labelText: AppLocalizations.of(context)!.password,
-              hintText: AppStrings.passwordHint,
-              prefixIcon: const Icon(Icons.lock_outlined),
+              prefixIcon: Icon(Icons.lock, size: isTablet ? 24 : 20),
               suffixIcon: IconButton(
                 icon: Icon(
                   widget.uiState.loginPasswordObscured
                       ? Icons.visibility
                       : Icons.visibility_off,
+                  size: isTablet ? 24 : 20,
                 ),
                 onPressed: () {
                   ref
@@ -196,63 +218,54 @@ class _LoginFormState extends ConsumerState<_LoginForm> {
                       .toggleLoginPasswordVisibility();
                 },
               ),
-              border: const OutlineInputBorder(),
+              labelStyle: TextStyle(fontSize: isTablet ? 18 : 16),
             ),
-            validator: (value) {
-              if (value == null || value.isEmpty) {
-                return AppStrings.passwordRequired;
-              }
-              return null;
-            },
+            style: TextStyle(fontSize: isTablet ? 18 : 16),
+            obscureText: widget.uiState.loginPasswordObscured,
+            textInputAction: TextInputAction.done,
+            validator: FormValidators.password,
+            autovalidateMode: AutovalidateMode.onUserInteraction,
+            onFieldSubmitted: (_) => _handleLogin(),
           ),
-          const SizedBox(height: 24),
 
+          SizedBox(height: isTablet ? 32 : 24),
+
+          // Login button
           SizedBox(
-            width: double.infinity,
-            height: 50,
-            child: widget.authState.when(
-              initial: () => _buildLoginButton(),
-              loading: () => const LoadingWidget(),
-              authenticated: (user) => _buildLoginButton(),
-              unauthenticated: () => _buildLoginButton(),
-              error: (message) => _buildLoginButton(),
+            height: isTablet ? 56 : 48,
+            child: ElevatedButton(
+              onPressed: !isLoading ? _handleLogin : null,
+              style: ElevatedButton.styleFrom(
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(isTablet ? 12 : 8),
+                ),
+              ),
+              child: isLoading
+                  ? const LoadingWidget(size: 24)
+                  : Text(
+                      AppStrings.loginButton,
+                      style: TextStyle(fontSize: isTablet ? 18 : 16),
+                    ),
             ),
           ),
+
           const SizedBox(height: 16),
 
-          if (widget.credentialsState.hasSavedCredentials)
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Text(
-                  AppStrings.savedCredentials,
-                  style: Theme.of(
-                    context,
-                  ).textTheme.bodySmall?.copyWith(color: Colors.grey[600]),
-                ),
-                const SizedBox(width: 8),
-                GestureDetector(
-                  onTap: _clearSavedCredentials,
-                  child: Icon(Icons.clear, size: 18, color: Colors.grey[600]),
-                ),
-              ],
-            ),
-
-          if (widget.credentialsState.hasSavedCredentials)
-            const SizedBox(height: 16),
-
+          // Register link
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Text(
                 AppStrings.noAccountQuestion,
-                style: Theme.of(context).textTheme.bodyMedium,
+                style: TextStyle(fontSize: isTablet ? 16 : 14),
               ),
+              const SizedBox(width: 4),
               GestureDetector(
-                onTap: () => context.go('/register'),
+                onTap: !isLoading ? () => context.go('/register') : null,
                 child: Text(
                   AppStrings.createAccountAction,
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  style: TextStyle(
+                    fontSize: isTablet ? 16 : 14,
                     color: Theme.of(context).colorScheme.primary,
                     fontWeight: FontWeight.bold,
                   ),
@@ -260,22 +273,9 @@ class _LoginFormState extends ConsumerState<_LoginForm> {
               ),
             ],
           ),
-        ],
-      ),
-    );
-  }
 
-  Widget _buildLoginButton() {
-    return ElevatedButton(
-      onPressed: _login,
-      style: ElevatedButton.styleFrom(
-        backgroundColor: Theme.of(context).colorScheme.primary,
-        foregroundColor: Colors.white,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-      ),
-      child: Text(
-        AppLocalizations.of(context)!.loginButton,
-        style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+          if (!isTablet) const Spacer(),
+        ],
       ),
     );
   }

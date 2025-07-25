@@ -114,7 +114,9 @@ class AuthRepositoryImpl implements AuthRepository {
       );
 
       if (userData != null) {
-        final authUser = AuthUser.fromJson(userData);
+        // Garantir que o Map tem o tipo correto para Hive
+        final map = Map<String, dynamic>.from(userData);
+        final authUser = AuthUser.fromJson(map);
         return Right(authUser);
       } else {
         return Right(null);

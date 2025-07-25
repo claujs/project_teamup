@@ -29,6 +29,9 @@ class UsersNotifier extends StateNotifier<UsersState> {
 
     state = const UsersState.loading();
 
+    // Simula delay de API
+    await Future.delayed(const Duration(seconds: 3));
+
     final result = await _userRepository.getUsers(page: _currentPage);
     result.fold((failure) => state = UsersState.error(failure.message), (
       users,
@@ -59,14 +62,11 @@ class UsersNotifier extends StateNotifier<UsersState> {
 
     final result = await _userRepository.getUsers(page: _currentPage);
 
-    result.fold(
-      (failure) {},
-      (users) {
-        _allUsers.addAll(users);
-        state = UsersState.loaded(List.from(_allUsers));
-        _currentPage++;
-      },
-    );
+    result.fold((failure) {}, (users) {
+      _allUsers.addAll(users);
+      state = UsersState.loaded(List.from(_allUsers));
+      _currentPage++;
+    });
   }
 }
 

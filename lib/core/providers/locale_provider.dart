@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'dart:ui' as ui;
 import '../constants/app_strings.dart';
 import '../providers.dart';
 import '../storage/local_storage.dart';
@@ -12,8 +13,19 @@ class LocaleNotifier extends StateNotifier<Locale> {
   final LocalStorage _localStorage;
   static const String _localeKey = AppStrings.localeKey;
 
-  LocaleNotifier(this._localStorage) : super(const Locale('pt')) {
+  LocaleNotifier(this._localStorage) : super(_getDeviceLocale()) {
     _loadLocale();
+  }
+
+  static Locale _getDeviceLocale() {
+    final deviceLocale = ui.PlatformDispatcher.instance.locale;
+    // Verifica se o idioma do dispositivo é suportado
+    if (deviceLocale.languageCode == 'pt' ||
+        deviceLocale.languageCode == 'en') {
+      return deviceLocale;
+    }
+    // Se não for suportado, retorna português como padrão
+    return const Locale('pt');
   }
 
   Future<void> _loadLocale() async {
@@ -22,8 +34,9 @@ class LocaleNotifier extends StateNotifier<Locale> {
       if (savedLocale != null) {
         state = Locale(savedLocale);
       }
+      // Se não há idioma salvo, mantém o idioma do dispositivo já definido no constructor
     } catch (e) {
-      // If there's an error, keep the default locale
+      // If there's an error, keep the device locale
     }
   }
 
