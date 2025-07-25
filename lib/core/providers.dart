@@ -36,5 +36,6 @@ final postRepositoryProvider = Provider<PostRepository>((ref) {
   return PostRepositoryImpl(
     networkInfo: ref.watch(networkInfoProvider),
     localStorage: ref.watch(localStorageProvider),
+    userRepository: ref.watch(userRepositoryProvider),
   );
 });

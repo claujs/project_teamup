@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../features/posts/presentation/screens/feed_screen.dart';
+import '../../features/posts/presentation/posts_notifier.dart';
 import '../../features/users/presentation/screens/users_screen.dart';
+import '../../features/users/presentation/users_notifier.dart';
 import '../../features/auth/presentation/auth_notifier.dart';
 import 'package:go_router/go_router.dart';
 
@@ -68,6 +70,15 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           setState(() {
             _currentIndex = index;
           });
+
+          // Refresh data when switching to feed tab
+          if (index == 0) {
+            ref.read(postsNotifierProvider.notifier).loadPosts(refresh: true);
+          }
+          // Refresh data when switching to users tab
+          else if (index == 1) {
+            ref.read(usersNotifierProvider.notifier).loadUsers(refresh: true);
+          }
         },
         type: BottomNavigationBarType.fixed,
         selectedItemColor: Theme.of(context).colorScheme.primary,

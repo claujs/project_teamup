@@ -12,13 +12,15 @@ class UsersScreen extends ConsumerStatefulWidget {
   ConsumerState<UsersScreen> createState() => _UsersScreenState();
 }
 
-class _UsersScreenState extends ConsumerState<UsersScreen> {
+class _UsersScreenState extends ConsumerState<UsersScreen>
+    with WidgetsBindingObserver {
   final _searchController = TextEditingController();
   final _scrollController = ScrollController();
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       ref.read(usersNotifierProvider.notifier).loadUsers();
     });
@@ -33,9 +35,23 @@ class _UsersScreenState extends ConsumerState<UsersScreen> {
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _searchController.dispose();
     _scrollController.dispose();
     super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    super.didChangeAppLifecycleState(state);
+    // Refresh users when app becomes active again
+    if (state == AppLifecycleState.resumed) {
+      _refreshUsers();
+    }
+  }
+
+  Future<void> _refreshUsers() async {
+    await ref.read(usersNotifierProvider.notifier).loadUsers(refresh: true);
   }
 
   void _onSearchChanged(String query) {
@@ -103,9 +119,7 @@ class _UsersScreenState extends ConsumerState<UsersScreen> {
                       ),
                     )
                   : RefreshIndicator(
-                      onRefresh: () => ref
-                          .read(usersNotifierProvider.notifier)
-                          .loadUsers(refresh: true),
+                      onRefresh: _refreshUsers,
                       child: ListView.builder(
                         controller: _scrollController,
                         padding: const EdgeInsets.symmetric(horizontal: 16),

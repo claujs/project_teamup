@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import '../../../../core/providers.dart';
 import '../../../../shared/widgets/loading_widget.dart';
+import 'chat_screen.dart';
 
 class UserDetailScreen extends ConsumerWidget {
   final String userId;
@@ -140,11 +141,13 @@ class UserDetailScreen extends ConsumerWidget {
                       Expanded(
                         child: ElevatedButton.icon(
                           onPressed: () {
-                            // TODO: Implement chat functionality
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text(
-                                  'Funcionalidade em desenvolvimento',
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => ChatScreen(
+                                  userName:
+                                      '${user.firstName} ${user.lastName}',
+                                  userAvatar: user.avatar,
                                 ),
                               ),
                             );

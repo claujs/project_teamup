@@ -81,8 +81,14 @@ class UserRepositoryImpl implements UserRepository {
         final response = await _apiClient.dio.get(
           '${AppConstants.usersEndpoint}/$id',
         );
-        final user = User.fromJson(response.data['data']);
-        return Right(user);
+        try {
+          final user = User.fromJson(response.data['data']);
+          return Right(user);
+        } catch (e) {
+          debugPrint('Error parsing user from API response: $e');
+          debugPrint('Response data: ${response.data}');
+          return Left(ServerFailure('Failed to parse user data: $e'));
+        }
       } else {
         final cachedUsersResult = await getCachedUsers();
         return cachedUsersResult.fold((failure) => Left(failure), (users) {
@@ -109,15 +115,30 @@ class UserRepositoryImpl implements UserRepository {
       );
 
       if (cachedData != null) {
-        final users = (cachedData['users'] as List)
-            .map((user) => User.fromJson(user))
-            .toList();
+        final usersList = cachedData['users'] as List;
+        final users = <User>[];
+
+        for (int i = 0; i < usersList.length; i++) {
+          try {
+            final user = User.fromJson(usersList[i]);
+            users.add(user);
+          } catch (e) {
+            debugPrint('Error parsing user at index $i: $e');
+            debugPrint('User data: ${usersList[i]}');
+            // Skip this user and continue with others
+            continue;
+          }
+        }
+
         return Right(users);
       } else {
         return Left(CacheFailure('No cached users found'));
       }
     } catch (e) {
-      return Left(CacheFailure(e.toString()));
+      debugPrint('Error getting cached users: $e');
+      // Clear corrupted cache
+      await _localStorage.delete(AppConstants.cachedUsersKey);
+      return Left(CacheFailure('Cache corrupted, cleared: ${e.toString()}'));
     }
   }
 

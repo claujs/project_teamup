@@ -18,6 +18,7 @@ class ApiClient {
         headers: {
           'Content-Type': 'application/json',
           'Accept': 'application/json',
+          'x-api-key': 'reqres-free-v1', // ReqRes free API key
         },
       ),
     );

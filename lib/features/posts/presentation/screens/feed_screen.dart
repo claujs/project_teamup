@@ -12,13 +12,34 @@ class FeedScreen extends ConsumerStatefulWidget {
   ConsumerState<FeedScreen> createState() => _FeedScreenState();
 }
 
-class _FeedScreenState extends ConsumerState<FeedScreen> {
+class _FeedScreenState extends ConsumerState<FeedScreen>
+    with WidgetsBindingObserver {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       ref.read(postsNotifierProvider.notifier).loadPosts();
     });
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    super.didChangeAppLifecycleState(state);
+    // Refresh feed when app becomes active again
+    if (state == AppLifecycleState.resumed) {
+      _refreshFeed();
+    }
+  }
+
+  Future<void> _refreshFeed() async {
+    await ref.read(postsNotifierProvider.notifier).loadPosts(refresh: true);
   }
 
   @override
@@ -30,8 +51,7 @@ class _FeedScreenState extends ConsumerState<FeedScreen> {
         initial: () => const LoadingWidget(message: 'Carregando posts...'),
         loading: () => const LoadingWidget(message: 'Carregando posts...'),
         loaded: (posts) => RefreshIndicator(
-          onRefresh: () =>
-              ref.read(postsNotifierProvider.notifier).loadPosts(refresh: true),
+          onRefresh: _refreshFeed,
           child: posts.isEmpty
               ? const Center(
                   child: Text(
