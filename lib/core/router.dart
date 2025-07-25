@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../features/auth/presentation/auth_notifier.dart';
 import '../features/auth/presentation/screens/login_screen.dart';
+import '../features/auth/presentation/screens/register_screen.dart';
 import '../features/users/presentation/screens/user_detail_screen.dart';
 import '../shared/screens/home_screen.dart';
 
@@ -20,12 +21,13 @@ final routerProvider = Provider<GoRouter>((ref) {
       );
 
       final isOnLoginPage = state.matchedLocation == '/login';
+      final isOnRegisterPage = state.matchedLocation == '/register';
 
-      if (!isAuthenticated && !isOnLoginPage) {
+      if (!isAuthenticated && !isOnLoginPage && !isOnRegisterPage) {
         return '/login';
       }
 
-      if (isAuthenticated && isOnLoginPage) {
+      if (isAuthenticated && (isOnLoginPage || isOnRegisterPage)) {
         return '/home';
       }
 
@@ -33,6 +35,10 @@ final routerProvider = Provider<GoRouter>((ref) {
     },
     routes: [
       GoRoute(path: '/login', builder: (context, state) => const LoginScreen()),
+      GoRoute(
+        path: '/register',
+        builder: (context, state) => const RegisterScreen(),
+      ),
       GoRoute(path: '/home', builder: (context, state) => const HomeScreen()),
       GoRoute(
         path: '/user/:id',

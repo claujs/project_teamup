@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'core/network/api_client.dart';
 import 'core/router.dart';
 import 'core/storage/local_storage.dart';
+import 'core/storage/local_user_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -10,6 +11,7 @@ void main() async {
   // Initialize dependencies
   ApiClient().initialize();
   await LocalStorageImpl().init();
+  await LocalUserService().init();
 
   runApp(const ProviderScope(child: MyApp()));
 }

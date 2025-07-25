@@ -18,10 +18,7 @@ final localStorageProvider = Provider<LocalStorage>(
 
 // Repository providers
 final authRepositoryProvider = Provider<AuthRepository>((ref) {
-  return AuthRepositoryImpl(
-    apiClient: ref.watch(apiClientProvider),
-    localStorage: ref.watch(localStorageProvider),
-  );
+  return AuthRepositoryImpl(localStorage: ref.watch(localStorageProvider));
 });
 
 final userRepositoryProvider = Provider<UserRepository>((ref) {

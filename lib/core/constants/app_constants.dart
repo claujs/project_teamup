@@ -5,6 +5,7 @@ class AppConstants {
   // API Endpoints
   static const String usersEndpoint = '/users';
   static const String loginEndpoint = '/login';
+  static const String registerEndpoint = '/register';
 
   // Storage Keys
   static const String authTokenKey = 'auth_token';

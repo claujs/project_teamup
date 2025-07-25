@@ -55,7 +55,15 @@ class LocalStorageImpl implements LocalStorage {
 
   @override
   Future<T?> getObject<T>(String key) async {
-    return _box.get(key) as T?;
+    final result = _box.get(key);
+    if (result == null) return null;
+
+    // Se o resultado é um Map e precisa ser convertido para Map<String, dynamic>
+    if (result is Map && result is! Map<String, dynamic>) {
+      return Map<String, dynamic>.from(result) as T;
+    }
+
+    return result as T?;
   }
 
   @override
