@@ -77,12 +77,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             _currentIndex = index;
           });
 
-          // Refresh data when switching to feed tab
           if (index == 0) {
             ref.read(postsNotifierProvider.notifier).loadPosts(refresh: true);
-          }
-          // Refresh data when switching to users tab
-          else if (index == 1) {
+          } else if (index == 1) {
             ref.read(usersNotifierProvider.notifier).loadUsers(refresh: true);
           } else if (index == 2) {
             ref.read(favoritesNotifierProvider.notifier).loadFavorites();

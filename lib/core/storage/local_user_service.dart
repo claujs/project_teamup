@@ -21,7 +21,6 @@ class LocalUserService {
       _credentialsBox = await Hive.openBox<dynamic>(_credentialsBoxName);
     } catch (e) {
       debugPrint('Error opening Hive boxes, clearing corrupted data: $e');
-      // Em caso de erro, tentar limpar e recriar as boxes
       await _clearCorruptedData();
       _usersBox = await Hive.openBox<dynamic>(_usersBoxName);
       _credentialsBox = await Hive.openBox<dynamic>(_credentialsBoxName);
@@ -37,14 +36,12 @@ class LocalUserService {
     }
   }
 
-  // Métodos para gerenciar usuários cadastrados
   Future<bool> registerUser(
     String email,
     String fullName,
     String password,
   ) async {
     try {
-      // Verificar se o usuário já existe
       if (await userExists(email)) {
         return false;
       }
@@ -84,7 +81,6 @@ class LocalUserService {
 
       debugPrint('getUser - Type of result: ${result.runtimeType}');
 
-      // Sempre fazer conversão segura para garantir o tipo correto
       if (result is Map) {
         return Map<String, dynamic>.from(result);
       } else {
@@ -124,7 +120,6 @@ class LocalUserService {
     }
   }
 
-  // Métodos para gerenciar credenciais salvas
   Future<void> saveCredentials(String email, String password) async {
     final credentials = {
       'email': email,
@@ -143,7 +138,6 @@ class LocalUserService {
 
       debugPrint('getSavedCredentials - Type of result: ${result.runtimeType}');
 
-      // Sempre fazer conversão segura para garantir o tipo correto
       if (result is Map) {
         return Map<String, dynamic>.from(result);
       } else {
@@ -164,27 +158,23 @@ class LocalUserService {
     return _credentialsBox.containsKey(_credentialsKey);
   }
 
-  // Método auxiliar para hash da senha
   String _hashPassword(String password) {
     final bytes = utf8.encode(password);
     final digest = sha256.convert(bytes);
     return digest.toString();
   }
 
-  // Método para limpar todos os dados
   Future<void> clearAllData() async {
     try {
       await _usersBox.clear();
       await _credentialsBox.clear();
 
-      // Forçar recriação das boxes para garantir tipos corretos
       await _usersBox.close();
       await _credentialsBox.close();
 
       await Hive.deleteBoxFromDisk(_usersBoxName);
       await Hive.deleteBoxFromDisk(_credentialsBoxName);
 
-      // Reabrir as boxes
       _usersBox = await Hive.openBox<dynamic>(_usersBoxName);
       _credentialsBox = await Hive.openBox<dynamic>(_credentialsBoxName);
 

@@ -33,7 +33,6 @@ class PostsNotifier extends StateNotifier<PostsState> {
     final currentState = state;
     if (currentState is! _Loaded) return;
 
-    // Optimistic update
     final posts = currentState.posts;
     final postIndex = posts.indexWhere((post) => post.id == postId);
     if (postIndex == -1) return;
@@ -41,10 +40,8 @@ class PostsNotifier extends StateNotifier<PostsState> {
     final post = posts[postIndex];
     final isLiked = post.likedByUserIds.contains(userId);
 
-    // Update UI immediately
     final updatedPosts = [...posts];
     if (isLiked) {
-      // Unlike
       updatedPosts[postIndex] = post.copyWith(
         likedByUserIds: post.likedByUserIds
             .where((id) => id != userId)
@@ -52,7 +49,6 @@ class PostsNotifier extends StateNotifier<PostsState> {
         likesCount: post.likesCount - 1,
       );
     } else {
-      // Like
       updatedPosts[postIndex] = post.copyWith(
         likedByUserIds: [...post.likedByUserIds, userId],
         likesCount: post.likesCount + 1,
@@ -61,18 +57,15 @@ class PostsNotifier extends StateNotifier<PostsState> {
 
     state = PostsState.loaded(updatedPosts);
 
-    // Perform actual operation
     final result = isLiked
         ? await _postRepository.unlikePost(postId, userId)
         : await _postRepository.likePost(postId, userId);
 
     result.fold(
       (failure) {
-        // Revert on error
         state = PostsState.loaded(posts);
       },
       (updatedPost) {
-        // Update with server response
         final finalPosts = [...updatedPosts];
         finalPosts[postIndex] = updatedPost;
         state = PostsState.loaded(finalPosts);

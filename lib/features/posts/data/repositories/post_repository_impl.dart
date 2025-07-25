@@ -28,14 +28,12 @@ class PostRepositoryImpl implements PostRepository {
   Future<Either<Failure, List<Post>>> getPosts() async {
     try {
       if (await _networkInfo.isConnected) {
-        // Get real users from API first
         final usersResult = await _userRepository.getUsers(page: 1);
         final users = usersResult.fold(
           (failure) => <User>[],
           (usersList) => usersList,
         );
 
-        // Generate fake posts with real users
         final posts = await _generateFakePostsWithRealUsers(users);
         await cachePosts(posts);
         return Right(posts);
@@ -187,12 +185,10 @@ class PostRepositoryImpl implements PostRepository {
     final faker = Faker();
     final posts = <Post>[];
 
-    // If no users available, return empty list
     if (users.isEmpty) {
       return posts;
     }
 
-    // Generate posts using real users from the API
     for (int i = 0; i < 20; i++) {
       final user = users[i % users.length];
       posts.add(

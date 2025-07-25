@@ -8,7 +8,6 @@ import 'core/storage/local_user_service.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // Initialize dependencies
   ApiClient().initialize();
   await LocalStorageImpl().init();
   await LocalUserService().init();

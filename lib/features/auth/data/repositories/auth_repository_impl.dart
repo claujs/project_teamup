@@ -17,7 +17,6 @@ class AuthRepositoryImpl implements AuthRepository {
   @override
   Future<Either<Failure, AuthUser>> login(String email, String password) async {
     try {
-      // Primeiro, verificar se é um usuário cadastrado localmente
       final isLocalUser = await _localUserService.validateUser(email, password);
       if (isLocalUser) {
         final userData = await _localUserService.getUser(email);
@@ -31,10 +30,8 @@ class AuthRepositoryImpl implements AuthRepository {
             lastName: userData['lastName']?.toString() ?? '',
           );
 
-          // Salvar credenciais para login automático
           await _localUserService.saveCredentials(email, password);
 
-          // Save token and user data
           await _localStorage.saveString(AppConstants.authTokenKey, localToken);
           await _localStorage.saveObject(
             AppConstants.userDataKey,
@@ -45,7 +42,6 @@ class AuthRepositoryImpl implements AuthRepository {
         }
       }
 
-      // Check for mock credentials (eve.holt@reqres.in) - também local, sem API
       if (email == 'eve.holt@reqres.in' && password == 'cityslicka') {
         const mockToken = 'demo_user_token';
         final authUser = AuthUser(
@@ -56,10 +52,8 @@ class AuthRepositoryImpl implements AuthRepository {
           lastName: 'Holt',
         );
 
-        // Salvar credenciais para login automático
         await _localUserService.saveCredentials(email, password);
 
-        // Save token and user data
         await _localStorage.saveString(AppConstants.authTokenKey, mockToken);
         await _localStorage.saveObject(
           AppConstants.userDataKey,
@@ -69,7 +63,6 @@ class AuthRepositoryImpl implements AuthRepository {
         return Right(authUser);
       }
 
-      // Se não encontrou usuário local nem demo, retornar erro
       return Left(
         AuthFailure(
           'Credenciais inválidas. Cadastre-se primeiro ou use as credenciais de demonstração.',
@@ -87,13 +80,11 @@ class AuthRepositoryImpl implements AuthRepository {
     String password,
   ) async {
     try {
-      // Verificar se o usuário já existe localmente
       final userExists = await _localUserService.userExists(email);
       if (userExists) {
         return Left(AuthFailure('Usuário já cadastrado com este e-mail'));
       }
 
-      // Registrar usuário localmente
       final registrationSuccess = await _localUserService.registerUser(
         email,
         fullName,
@@ -101,7 +92,6 @@ class AuthRepositoryImpl implements AuthRepository {
       );
 
       if (registrationSuccess) {
-        // Criar AuthUser para o usuário registrado
         final userData = await _localUserService.getUser(email);
         if (userData != null) {
           const localToken = 'local_user_token';
@@ -113,10 +103,8 @@ class AuthRepositoryImpl implements AuthRepository {
             lastName: userData['lastName'],
           );
 
-          // Salvar credenciais para login automático
           await _localUserService.saveCredentials(email, password);
 
-          // Save token and user data
           await _localStorage.saveString(AppConstants.authTokenKey, localToken);
           await _localStorage.saveObject(
             AppConstants.userDataKey,

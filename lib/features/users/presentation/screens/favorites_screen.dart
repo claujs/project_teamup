@@ -13,31 +13,34 @@ class FavoritesScreen extends ConsumerWidget {
     final state = ref.watch(favoritesNotifierProvider);
 
     return Scaffold(
-      body: state.when(
-        initial: () => const LoadingWidget(),
-        loading: () => const LoadingWidget(),
-        loaded: (favorites) => favorites.isEmpty
-            ? const Center(child: Text('Nenhum favorito adicionado.'))
-            : ListView.builder(
-                itemCount: favorites.length,
-                itemBuilder: (context, index) {
-                  final user = favorites[index];
-                  return Card(
-                    margin: const EdgeInsets.only(bottom: 12),
-                    child: ListTile(
-                      leading: CircleAvatar(
-                        backgroundImage: CachedNetworkImageProvider(
-                          user.avatar,
+      body: Padding(
+        padding: const EdgeInsets.all(16),
+        child: state.when(
+          initial: () => const LoadingWidget(),
+          loading: () => const LoadingWidget(),
+          loaded: (favorites) => favorites.isEmpty
+              ? const Center(child: Text('Nenhum favorito adicionado.'))
+              : ListView.builder(
+                  itemCount: favorites.length,
+                  itemBuilder: (context, index) {
+                    final user = favorites[index];
+                    return Card(
+                      margin: const EdgeInsets.only(bottom: 12),
+                      child: ListTile(
+                        leading: CircleAvatar(
+                          backgroundImage: CachedNetworkImageProvider(
+                            user.avatar,
+                          ),
                         ),
+                        title: Text('${user.firstName} ${user.lastName}'),
+                        subtitle: Text(user.email),
+                        onTap: () => context.push('/user/${user.id}'),
                       ),
-                      title: Text('${user.firstName} ${user.lastName}'),
-                      subtitle: Text(user.email),
-                      onTap: () => context.push('/user/${user.id}'),
-                    ),
-                  );
-                },
-              ),
-        error: (message) => Center(child: Text('Erro: $message')),
+                    );
+                  },
+                ),
+          error: (message) => Center(child: Text('Erro: $message')),
+        ),
       ),
     );
   }

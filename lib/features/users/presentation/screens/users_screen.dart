@@ -44,7 +44,6 @@ class _UsersScreenState extends ConsumerState<UsersScreen>
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     super.didChangeAppLifecycleState(state);
-    // Refresh users when app becomes active again
     if (state == AppLifecycleState.resumed) {
       _refreshUsers();
     }
@@ -65,7 +64,6 @@ class _UsersScreenState extends ConsumerState<UsersScreen>
     return Scaffold(
       body: Column(
         children: [
-          // Search bar
           Padding(
             padding: const EdgeInsets.all(16),
             child: TextField(
@@ -93,7 +91,6 @@ class _UsersScreenState extends ConsumerState<UsersScreen>
             ),
           ),
 
-          // Users list
           Expanded(
             child: usersState.when(
               initial: () =>
@@ -232,7 +229,6 @@ class _UsersScreenState extends ConsumerState<UsersScreen>
       'Qualidade',
     ];
 
-    // Use user ID as seed for consistent results
     final position = positions[userId % positions.length];
     final department = departments[userId % departments.length];
 

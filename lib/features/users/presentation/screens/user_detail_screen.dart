@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import '../../../../core/providers.dart';
 import '../../../../shared/widgets/loading_widget.dart';
-import 'chat_screen.dart';
+import '../../../chat/presentation/screens/chat_screen.dart';
 import 'package:faker/faker.dart';
 
 class UserDetailScreen extends ConsumerWidget {
@@ -77,7 +77,6 @@ class UserDetailScreen extends ConsumerWidget {
               padding: const EdgeInsets.all(24),
               child: Column(
                 children: [
-                  // Profile Image
                   Center(
                     child: CircleAvatar(
                       radius: 60,
@@ -86,7 +85,6 @@ class UserDetailScreen extends ConsumerWidget {
                   ),
                   const SizedBox(height: 24),
 
-                  // Name
                   Text(
                     '${user.firstName} ${user.lastName}',
                     style: Theme.of(context).textTheme.headlineMedium?.copyWith(
@@ -96,7 +94,6 @@ class UserDetailScreen extends ConsumerWidget {
                   ),
                   const SizedBox(height: 8),
 
-                  // Job Title
                   Text(
                     _generateJobTitle(user.id),
                     style: Theme.of(context).textTheme.titleMedium?.copyWith(
@@ -107,7 +104,6 @@ class UserDetailScreen extends ConsumerWidget {
                   ),
                   const SizedBox(height: 32),
 
-                  // Information Cards
                   _InfoCard(
                     icon: Icons.email_outlined,
                     title: 'E-mail',
@@ -136,7 +132,6 @@ class UserDetailScreen extends ConsumerWidget {
                   ),
                   const SizedBox(height: 32),
 
-                  // Action Buttons
                   Row(
                     children: [
                       Expanded(
@@ -149,6 +144,7 @@ class UserDetailScreen extends ConsumerWidget {
                                   userName:
                                       '${user.firstName} ${user.lastName}',
                                   userAvatar: user.avatar,
+                                  userId: user.id.toString(),
                                 ),
                               ),
                             );
@@ -161,7 +157,6 @@ class UserDetailScreen extends ConsumerWidget {
                       Expanded(
                         child: OutlinedButton.icon(
                           onPressed: () {
-                            // TODO: Implement call functionality
                             ScaffoldMessenger.of(context).showSnackBar(
                               const SnackBar(
                                 content: Text(

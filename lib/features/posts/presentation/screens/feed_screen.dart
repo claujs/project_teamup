@@ -30,7 +30,6 @@ class _FeedScreenState extends ConsumerState<FeedScreen>
 
   @override
   void dispose() {
-    // Dispose todos os controllers
     for (final controller in _commentControllers.values) {
       controller.dispose();
     }
@@ -41,7 +40,6 @@ class _FeedScreenState extends ConsumerState<FeedScreen>
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     super.didChangeAppLifecycleState(state);
-    // Refresh feed when app becomes active again
     if (state == AppLifecycleState.resumed) {
       _refreshFeed();
     }
@@ -88,7 +86,7 @@ class _FeedScreenState extends ConsumerState<FeedScreen>
                 content,
                 user.id,
                 '${user.firstName ?? ''} ${user.lastName ?? ''}',
-                '', // Avatar vazio por enquanto
+                '',
               );
           controller.clear();
         }
@@ -135,7 +133,6 @@ class _FeedScreenState extends ConsumerState<FeedScreen>
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            // Author info
                             Row(
                               children: [
                                 CircleAvatar(
@@ -172,13 +169,11 @@ class _FeedScreenState extends ConsumerState<FeedScreen>
                             ),
                             const SizedBox(height: 12),
 
-                            // Post content
                             Text(
                               post.content,
                               style: const TextStyle(fontSize: 14),
                             ),
 
-                            // Tags
                             if (post.tags.isNotEmpty) ...[
                               const SizedBox(height: 8),
                               Wrap(
@@ -201,7 +196,6 @@ class _FeedScreenState extends ConsumerState<FeedScreen>
                               ),
                             ],
 
-                            // Image
                             if (post.imageUrl != null) ...[
                               const SizedBox(height: 12),
                               ClipRRect(
@@ -232,10 +226,8 @@ class _FeedScreenState extends ConsumerState<FeedScreen>
 
                             const SizedBox(height: 12),
 
-                            // Actions
                             Row(
                               children: [
-                                // Like button
                                 IconButton(
                                   icon: Icon(
                                     isLiked
@@ -256,7 +248,6 @@ class _FeedScreenState extends ConsumerState<FeedScreen>
                                 Text('${post.likesCount}'),
                                 const SizedBox(width: 16),
 
-                                // Comment button
                                 IconButton(
                                   icon: Icon(
                                     isExpanded
@@ -275,7 +266,6 @@ class _FeedScreenState extends ConsumerState<FeedScreen>
                                 Text('${post.comments.length}'),
                                 const SizedBox(width: 16),
 
-                                // Share button
                                 IconButton(
                                   icon: const Icon(Icons.share_outlined),
                                   onPressed: () =>
@@ -284,11 +274,9 @@ class _FeedScreenState extends ConsumerState<FeedScreen>
                               ],
                             ),
 
-                            // Expanded comments section
                             if (isExpanded) ...[
                               const Divider(height: 24),
 
-                              // Existing comments
                               if (post.comments.isNotEmpty) ...[
                                 const Text(
                                   'Comentários:',
@@ -298,60 +286,49 @@ class _FeedScreenState extends ConsumerState<FeedScreen>
                                   ),
                                 ),
                                 const SizedBox(height: 8),
-                                ...post.comments
-                                    .map(
-                                      (comment) => Container(
-                                        margin: const EdgeInsets.only(
-                                          bottom: 12,
-                                        ),
-                                        padding: const EdgeInsets.all(12),
-                                        decoration: BoxDecoration(
-                                          color: Colors.grey[100],
-                                          borderRadius: BorderRadius.circular(
-                                            8,
-                                          ),
-                                        ),
-                                        child: Column(
-                                          crossAxisAlignment:
-                                              CrossAxisAlignment.start,
+                                ...post.comments.map(
+                                  (comment) => Container(
+                                    margin: const EdgeInsets.only(bottom: 12),
+                                    padding: const EdgeInsets.all(12),
+                                    decoration: BoxDecoration(
+                                      color: Colors.grey[100],
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Row(
                                           children: [
-                                            Row(
-                                              children: [
-                                                Text(
-                                                  comment.authorName,
-                                                  style: const TextStyle(
-                                                    fontWeight: FontWeight.bold,
-                                                    fontSize: 12,
-                                                  ),
-                                                ),
-                                                const SizedBox(width: 8),
-                                                Text(
-                                                  _formatDate(
-                                                    comment.createdAt,
-                                                  ),
-                                                  style: TextStyle(
-                                                    color: Colors.grey[600],
-                                                    fontSize: 10,
-                                                  ),
-                                                ),
-                                              ],
-                                            ),
-                                            const SizedBox(height: 4),
                                             Text(
-                                              comment.content,
+                                              comment.authorName,
                                               style: const TextStyle(
-                                                fontSize: 13,
+                                                fontWeight: FontWeight.bold,
+                                                fontSize: 12,
+                                              ),
+                                            ),
+                                            const SizedBox(width: 8),
+                                            Text(
+                                              _formatDate(comment.createdAt),
+                                              style: TextStyle(
+                                                color: Colors.grey[600],
+                                                fontSize: 10,
                                               ),
                                             ),
                                           ],
                                         ),
-                                      ),
-                                    )
-                                    .toList(),
+                                        const SizedBox(height: 4),
+                                        Text(
+                                          comment.content,
+                                          style: const TextStyle(fontSize: 13),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
                                 const SizedBox(height: 12),
                               ],
 
-                              // Comment input
                               Row(
                                 children: [
                                   Expanded(

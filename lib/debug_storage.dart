@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'core/storage/local_user_service.dart';
 
-/// Utilitário de debug para limpar storage e testar tipos
 class DebugStorage {
   static Future<void> clearAllUserData() async {
     final service = LocalUserService();

@@ -60,7 +60,7 @@ class UsersNotifier extends StateNotifier<UsersState> {
     final result = await _userRepository.getUsers(page: _currentPage);
 
     result.fold(
-      (failure) {}, // Don't change state on error for load more
+      (failure) {},
       (users) {
         _allUsers.addAll(users);
         state = UsersState.loaded(List.from(_allUsers));

@@ -19,7 +19,6 @@ class User with _$User {
 
   factory User.fromJson(Map<String, dynamic> json) {
     try {
-      // Handle both API format (first_name/last_name) and internal format (firstName/lastName)
       return User(
         id: json['id'] as int,
         email: json['email'] as String,

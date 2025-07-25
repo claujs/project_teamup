@@ -31,7 +31,6 @@ class AuthNotifier extends StateNotifier<AuthState> {
     state = const AuthState.loading();
 
     try {
-      // Verificar se há credenciais salvas
       final hasSavedCredentials = await _localUserService.hasSavedCredentials();
       if (hasSavedCredentials) {
         final credentials = await _localUserService.getSavedCredentials();
@@ -40,7 +39,6 @@ class AuthNotifier extends StateNotifier<AuthState> {
           final password = credentials['password'];
 
           if (email is String && password is String) {
-            // Tentar fazer login automático
             final result = await _authRepository.login(email, password);
             result.fold((failure) => _proceedWithNormalAuthCheck(), (user) {
               state = AuthState.authenticated(user);

@@ -38,7 +38,6 @@ class UserRepositoryImpl implements UserRepository {
         final userResponse = UserResponse.fromJson(response.data);
         final users = userResponse.data;
 
-        // Cache users
         await cacheUsers(users);
 
         return Right(users);
@@ -125,7 +124,6 @@ class UserRepositoryImpl implements UserRepository {
           } catch (e) {
             debugPrint('Error parsing user at index $i: $e');
             debugPrint('User data: ${usersList[i]}');
-            // Skip this user and continue with others
             continue;
           }
         }
@@ -136,7 +134,6 @@ class UserRepositoryImpl implements UserRepository {
       }
     } catch (e) {
       debugPrint('Error getting cached users: $e');
-      // Clear corrupted cache
       await _localStorage.delete(AppConstants.cachedUsersKey);
       return Left(CacheFailure('Cache corrupted, cleared: ${e.toString()}'));
     }
@@ -151,7 +148,6 @@ class UserRepositoryImpl implements UserRepository {
       };
       await _localStorage.saveObject(AppConstants.cachedUsersKey, cacheData);
     } catch (e) {
-      // Log error but don't throw - caching is not critical
       debugPrint('Error caching users: $e');
     }
   }

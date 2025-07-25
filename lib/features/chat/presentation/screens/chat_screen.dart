@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/providers.dart';
-import '../../../chat/domain/entities/chat_message.dart';
+import '../../domain/entities/chat_message.dart';
 
 class ChatScreen extends ConsumerStatefulWidget {
   final String userName;
@@ -28,7 +28,6 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
   @override
   void initState() {
     super.initState();
-    // Carregar conversa quando a tela inicializar
     WidgetsBinding.instance.addPostFrameCallback((_) {
       ref
           .read(chatNotifierProvider.notifier)
@@ -144,7 +143,6 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
               initial: () => const Center(child: Text('Iniciando conversa...')),
               loading: () => const Center(child: CircularProgressIndicator()),
               loaded: (conversation) {
-                // Auto-scroll when messages change
                 WidgetsBinding.instance.addPostFrameCallback((_) {
                   _scrollToBottom();
                 });

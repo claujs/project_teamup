@@ -49,7 +49,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
         _hasSavedCredentials = false;
       });
     }
-    // Não definir credenciais de demo por padrão - deixar campos vazios
   }
 
   @override
@@ -121,7 +120,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                // Logo
                 Container(
                   width: 120,
                   height: 120,
@@ -144,7 +142,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                 ),
                 const SizedBox(height: 32),
 
-                // Title
                 Text(
                   'TeamUp',
                   style: Theme.of(context).textTheme.headlineLarge?.copyWith(
@@ -161,7 +158,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                 ),
                 const SizedBox(height: 48),
 
-                // Email field
                 TextFormField(
                   controller: _emailController,
                   keyboardType: TextInputType.emailAddress,
@@ -185,7 +181,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                 ),
                 const SizedBox(height: 16),
 
-                // Password field
                 TextFormField(
                   controller: _passwordController,
                   obscureText: _obscurePassword,
@@ -216,7 +211,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                 ),
                 const SizedBox(height: 24),
 
-                // Login button
                 SizedBox(
                   width: double.infinity,
                   height: 50,
@@ -230,7 +224,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                 ),
                 const SizedBox(height: 16),
 
-                // Demo credentials info - apenas se não há credenciais salvas
                 if (!_hasSavedCredentials)
                   Container(
                     padding: const EdgeInsets.all(16),
@@ -275,7 +268,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
                 if (!_hasSavedCredentials) const SizedBox(height: 16),
 
-                // Opção para limpar credenciais salvas
                 if (_hasSavedCredentials)
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
@@ -300,7 +292,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
                 if (_hasSavedCredentials) const SizedBox(height: 16),
 
-                // Register link
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
