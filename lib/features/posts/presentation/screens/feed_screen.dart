@@ -329,8 +329,8 @@ class _FeedScreenState extends ConsumerState<FeedScreen>
                                 const SizedBox(height: 12),
                               ],
 
-                              Consumer(
-                                builder: (context, ref, child) {
+                              Builder(
+                                builder: (context) {
                                   final controller = ref
                                       .read(commentControllersProvider.notifier)
                                       .getController(post.id);

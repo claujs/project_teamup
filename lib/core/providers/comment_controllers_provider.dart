@@ -5,33 +5,48 @@ class CommentControllersNotifier
     extends StateNotifier<Map<String, TextEditingController>> {
   CommentControllersNotifier() : super({});
 
+  final Map<String, TextEditingController> _controllers = {};
+
   TextEditingController getController(String postId) {
-    if (!state.containsKey(postId)) {
-      state = {...state, postId: TextEditingController()};
+    if (_controllers.containsKey(postId)) {
+      return _controllers[postId]!;
     }
-    return state[postId]!;
+
+    final controller = TextEditingController();
+    _controllers[postId] = controller;
+
+    Future.microtask(() {
+      if (mounted) {
+        state = Map.from(_controllers);
+      }
+    });
+
+    return controller;
   }
 
   void removeController(String postId) {
-    if (state.containsKey(postId)) {
-      state[postId]?.dispose();
-      final newState = Map<String, TextEditingController>.from(state);
-      newState.remove(postId);
-      state = newState;
+    if (_controllers.containsKey(postId)) {
+      _controllers[postId]?.dispose();
+      _controllers.remove(postId);
+
+      if (mounted) {
+        state = Map.from(_controllers);
+      }
     }
   }
 
   void clearController(String postId) {
-    if (state.containsKey(postId)) {
-      state[postId]?.clear();
+    if (_controllers.containsKey(postId)) {
+      _controllers[postId]?.clear();
     }
   }
 
   @override
   void dispose() {
-    for (final controller in state.values) {
+    for (final controller in _controllers.values) {
       controller.dispose();
     }
+    _controllers.clear();
     super.dispose();
   }
 }
