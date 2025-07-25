@@ -20,6 +20,29 @@ class AuthRepositoryImpl implements AuthRepository {
   @override
   Future<Either<Failure, AuthUser>> login(String email, String password) async {
     try {
+      // Check for mock credentials first (eve.holt@reqres.in)
+      if (email == 'eve.holt@reqres.in' && password == 'cityslicka') {
+        // Mock login - no API call
+        const mockToken = 'QpwL5tke4Pnpja7X4';
+        final authUser = AuthUser(
+          id: '1',
+          email: email,
+          token: mockToken,
+          firstName: 'Eve',
+          lastName: 'Holt',
+        );
+
+        // Save token and user data
+        await _localStorage.saveString(AppConstants.authTokenKey, mockToken);
+        await _localStorage.saveObject(
+          AppConstants.userDataKey,
+          authUser.toJson(),
+        );
+
+        return Right(authUser);
+      }
+
+      // For other credentials, proceed with API call
       final response = await _apiClient.dio.post(
         AppConstants.loginEndpoint,
         data: {'email': email, 'password': password},

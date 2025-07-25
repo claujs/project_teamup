@@ -17,7 +17,7 @@ class UsersState with _$UsersState {
 class UsersNotifier extends StateNotifier<UsersState> {
   final UserRepository _userRepository;
   int _currentPage = 1;
-  List<User> _allUsers = [];
+  final List<User> _allUsers = [];
 
   UsersNotifier(this._userRepository) : super(const UsersState.initial());
 
@@ -57,7 +57,6 @@ class UsersNotifier extends StateNotifier<UsersState> {
   Future<void> loadMore() async {
     if (state is! _Loaded) return;
 
-    final currentUsers = (state as _Loaded).users;
     final result = await _userRepository.getUsers(page: _currentPage);
 
     result.fold(

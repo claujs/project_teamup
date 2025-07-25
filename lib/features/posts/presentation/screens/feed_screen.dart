@@ -106,9 +106,10 @@ class _FeedScreenState extends ConsumerState<FeedScreen> {
                                           tag,
                                           style: const TextStyle(fontSize: 12),
                                         ),
-                                        backgroundColor: Theme.of(
-                                          context,
-                                        ).colorScheme.primary.withOpacity(0.1),
+                                        backgroundColor: Theme.of(context)
+                                            .colorScheme
+                                            .primary
+                                            .withValues(alpha: 0.1),
                                         side: BorderSide.none,
                                       ),
                                     )

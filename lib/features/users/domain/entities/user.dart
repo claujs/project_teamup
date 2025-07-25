@@ -8,8 +8,8 @@ class User with _$User {
   const factory User({
     required int id,
     required String email,
-    @JsonKey(name: 'first_name') required String firstName,
-    @JsonKey(name: 'last_name') required String lastName,
+    required String firstName,
+    required String lastName,
     required String avatar,
     String? position,
     String? department,

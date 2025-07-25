@@ -1,5 +1,6 @@
 import 'package:dartz/dartz.dart';
 import 'package:faker/faker.dart';
+import 'package:flutter/foundation.dart';
 import '../../../../core/constants/app_constants.dart';
 import '../../../../core/errors/failures.dart';
 import '../../../../core/network/network_info.dart';
@@ -62,7 +63,7 @@ class PostRepositoryImpl implements PostRepository {
       };
       await _localStorage.saveObject(AppConstants.cachedPostsKey, cacheData);
     } catch (e) {
-      print('Error caching posts: $e');
+      debugPrint('Error caching posts: $e');
     }
   }
 

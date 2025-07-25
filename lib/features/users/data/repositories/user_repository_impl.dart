@@ -1,5 +1,6 @@
 import 'package:dartz/dartz.dart';
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
 import '../../../../core/constants/app_constants.dart';
 import '../../../../core/errors/failures.dart';
 import '../../../../core/network/api_client.dart';
@@ -130,7 +131,7 @@ class UserRepositoryImpl implements UserRepository {
       await _localStorage.saveObject(AppConstants.cachedUsersKey, cacheData);
     } catch (e) {
       // Log error but don't throw - caching is not critical
-      print('Error caching users: $e');
+      debugPrint('Error caching users: $e');
     }
   }
 }

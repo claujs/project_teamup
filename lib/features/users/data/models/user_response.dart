@@ -8,9 +8,9 @@ part 'user_response.g.dart';
 class UserResponse with _$UserResponse {
   const factory UserResponse({
     required int page,
-    @JsonKey(name: 'per_page') required int perPage,
+    required int perPage,
     required int total,
-    @JsonKey(name: 'total_pages') required int totalPages,
+    required int totalPages,
     required List<User> data,
   }) = _UserResponse;
 
