@@ -19,27 +19,44 @@ class _UsersScreenState extends ConsumerState<UsersScreen>
     with WidgetsBindingObserver {
   final _searchController = TextEditingController();
   final _scrollController = ScrollController();
+  bool _isLoadingMore = false;
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      ref.read(usersNotifierProvider.notifier).loadUsers();
-    });
 
-    _scrollController.addListener(() {
-      if (_scrollController.position.pixels >=
-          _scrollController.position.maxScrollExtent - 200) {
-        ref.read(usersNotifierProvider.notifier).loadMore();
+    // Carregar dados iniciais de forma segura
+    Future.microtask(() {
+      if (mounted) {
+        ref.read(usersNotifierProvider.notifier).loadUsers();
       }
     });
+
+    // Adicionar listener para scroll de forma otimizada
+    _scrollController.addListener(_onScroll);
+  }
+
+  void _onScroll() {
+    if (!mounted || _isLoadingMore) return;
+
+    if (_scrollController.hasClients &&
+        _scrollController.position.pixels >=
+            _scrollController.position.maxScrollExtent - 200) {
+      _isLoadingMore = true;
+      ref.read(usersNotifierProvider.notifier).loadMore().then((_) {
+        if (mounted) {
+          _isLoadingMore = false;
+        }
+      });
+    }
   }
 
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
     _searchController.dispose();
+    _scrollController.removeListener(_onScroll);
     _scrollController.dispose();
     super.dispose();
   }
@@ -47,16 +64,18 @@ class _UsersScreenState extends ConsumerState<UsersScreen>
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     super.didChangeAppLifecycleState(state);
-    if (state == AppLifecycleState.resumed) {
+    if (state == AppLifecycleState.resumed && mounted) {
       _refreshUsers();
     }
   }
 
   Future<void> _refreshUsers() async {
+    if (!mounted) return;
     await ref.read(usersNotifierProvider.notifier).loadUsers(refresh: true);
   }
 
   void _onSearchChanged(String query) {
+    if (!mounted) return;
     ref.read(usersNotifierProvider.notifier).searchUsers(query);
   }
 

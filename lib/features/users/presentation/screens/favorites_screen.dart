@@ -322,14 +322,6 @@ class _FavoriteCard extends StatelessWidget {
                   ],
                 ),
               ),
-              Positioned(
-                top: 8,
-                right: 8,
-                child: IconButton(
-                  icon: const Icon(Icons.favorite, color: Colors.red),
-                  onPressed: onRemove,
-                ),
-              ),
             ],
           ),
         ),
@@ -366,10 +358,7 @@ class _FavoriteCard extends StatelessWidget {
             ),
           ],
         ),
-        trailing: IconButton(
-          icon: const Icon(Icons.favorite, color: Colors.red),
-          onPressed: onRemove,
-        ),
+
         onTap: onTap,
       ),
     );

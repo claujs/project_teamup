@@ -24,14 +24,23 @@ class ChatScreen extends ConsumerStatefulWidget {
 class _ChatScreenState extends ConsumerState<ChatScreen> {
   final TextEditingController _messageController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
+  bool _shouldAutoScroll = true;
+  bool _isScrolling = false;
 
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      ref
-          .read(chatNotifierProvider.notifier)
-          .loadConversation(widget.userId, widget.userName, widget.userAvatar);
+    // Carregar conversa uma única vez
+    Future.microtask(() {
+      if (mounted) {
+        ref
+            .read(chatNotifierProvider.notifier)
+            .loadConversation(
+              widget.userId,
+              widget.userName,
+              widget.userAvatar,
+            );
+      }
     });
   }
 
@@ -49,19 +58,27 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
         .read(chatNotifierProvider.notifier)
         .sendMessage(_messageController.text);
     _messageController.clear();
+    _shouldAutoScroll = true;
     _scrollToBottom();
   }
 
   void _scrollToBottom() {
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (_scrollController.hasClients) {
-        _scrollController.animateTo(
-          _scrollController.position.maxScrollExtent,
-          duration: const Duration(milliseconds: 300),
-          curve: Curves.easeOut,
-        );
-      }
-    });
+    if (!mounted || _isScrolling) return;
+
+    if (_scrollController.hasClients && _shouldAutoScroll) {
+      _isScrolling = true;
+      _scrollController
+          .animateTo(
+            _scrollController.position.maxScrollExtent,
+            duration: const Duration(milliseconds: 300),
+            curve: Curves.easeOut,
+          )
+          .then((_) {
+            if (mounted) {
+              _isScrolling = false;
+            }
+          });
+    }
   }
 
   @override
@@ -70,11 +87,28 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
 
     return Scaffold(
       appBar: AppBar(
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () => Navigator.of(context).pop(),
+        ),
         title: Row(
           children: [
             CircleAvatar(
               radius: 20,
-              backgroundImage: CachedNetworkImageProvider(widget.userAvatar),
+              backgroundImage: widget.userAvatar.isNotEmpty
+                  ? CachedNetworkImageProvider(widget.userAvatar)
+                  : null,
+              child: widget.userAvatar.isEmpty
+                  ? Text(
+                      widget.userName.isNotEmpty
+                          ? widget.userName[0].toUpperCase()
+                          : 'U',
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    )
+                  : null,
             ),
             const SizedBox(width: 12),
             Expanded(
@@ -85,26 +119,13 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                     widget.userName,
                     style: const TextStyle(
                       fontSize: 16,
-                      fontWeight: FontWeight.bold,
+                      fontWeight: FontWeight.w600,
                     ),
+                    overflow: TextOverflow.ellipsis,
                   ),
-                  Text(
-                    chatState.maybeWhen(
-                      loaded: (conversation) => conversation.isOnline
-                          ? AppStrings.online
-                          : AppStrings.offline,
-                      orElse: () => AppStrings.connecting,
-                    ),
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: chatState.maybeWhen(
-                        loaded: (conversation) => conversation.isOnline
-                            ? Colors.green[600]
-                            : Colors.grey[600],
-                        orElse: () => Colors.grey[600],
-                      ),
-                      fontWeight: FontWeight.w500,
-                    ),
+                  const Text(
+                    AppStrings.online,
+                    style: TextStyle(fontSize: 12, color: Colors.green),
                   ),
                 ],
               ),
@@ -145,9 +166,11 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                   const Center(child: Text(AppStrings.startingConversation)),
               loading: () => const Center(child: CircularProgressIndicator()),
               loaded: (conversation) {
-                WidgetsBinding.instance.addPostFrameCallback((_) {
-                  _scrollToBottom();
-                });
+                // Scroll apenas quando necessário e com segurança
+                if (_shouldAutoScroll && conversation.messages.isNotEmpty) {
+                  Future.microtask(() => _scrollToBottom());
+                  _shouldAutoScroll = false;
+                }
 
                 return ListView.builder(
                   controller: _scrollController,

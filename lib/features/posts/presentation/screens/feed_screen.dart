@@ -105,13 +105,23 @@ class _FeedScreenState extends ConsumerState<FeedScreen>
         initial: () => const LoadingWidget(message: AppStrings.loadingPosts),
         loading: () => const LoadingWidget(message: AppStrings.loadingPosts),
         loaded: (posts) => RefreshIndicator(
-          onRefresh: _refreshFeed,
+          onRefresh: () async {
+            if (mounted) {
+              await _refreshFeed();
+            }
+          },
           child: posts.isEmpty
-              ? const Center(
-                  child: Text(
-                    AppStrings.noPostsFound,
-                    style: TextStyle(fontSize: 16, color: Colors.grey),
-                  ),
+              ? ListView(
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  children: const [
+                    SizedBox(height: 200),
+                    Center(
+                      child: Text(
+                        AppStrings.noPostsFound,
+                        style: TextStyle(fontSize: 16, color: Colors.grey),
+                      ),
+                    ),
+                  ],
                 )
               : ResponsiveBuilder(
                   mobile: _buildMobileLayout(posts, authState, uiState),
@@ -136,9 +146,13 @@ class _FeedScreenState extends ConsumerState<FeedScreen>
               ),
               const SizedBox(height: 16),
               ElevatedButton(
-                onPressed: () => ref
-                    .read(postsNotifierProvider.notifier)
-                    .loadPosts(refresh: true),
+                onPressed: () {
+                  if (mounted) {
+                    ref
+                        .read(postsNotifierProvider.notifier)
+                        .loadPosts(refresh: true);
+                  }
+                },
                 child: const Text(AppStrings.tryAgainButton),
               ),
             ],
