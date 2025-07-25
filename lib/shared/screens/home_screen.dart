@@ -6,6 +6,8 @@ import '../../features/users/presentation/screens/users_screen.dart';
 import '../../features/users/presentation/users_notifier.dart';
 import '../../features/auth/presentation/auth_notifier.dart';
 import 'package:go_router/go_router.dart';
+import '../../features/users/presentation/screens/favorites_screen.dart';
+import '../../core/providers.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
@@ -17,7 +19,11 @@ class HomeScreen extends ConsumerStatefulWidget {
 class _HomeScreenState extends ConsumerState<HomeScreen> {
   int _currentIndex = 0;
 
-  final List<Widget> _screens = [const FeedScreen(), const UsersScreen()];
+  final List<Widget> _screens = [
+    const FeedScreen(),
+    const UsersScreen(),
+    const FavoritesScreen(),
+  ];
 
   @override
   Widget build(BuildContext context) {
@@ -78,6 +84,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           // Refresh data when switching to users tab
           else if (index == 1) {
             ref.read(usersNotifierProvider.notifier).loadUsers(refresh: true);
+          } else if (index == 2) {
+            ref.read(favoritesNotifierProvider.notifier).loadFavorites();
           }
         },
         type: BottomNavigationBarType.fixed,
@@ -93,6 +101,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             icon: Icon(Icons.people_outlined),
             activeIcon: Icon(Icons.people),
             label: 'Equipe',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.star_outline),
+            activeIcon: Icon(Icons.star),
+            label: 'Favoritos',
           ),
         ],
       ),

@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 import '../../../core/providers.dart';
@@ -55,7 +56,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
         _proceedWithNormalAuthCheck();
       }
     } catch (e) {
-      print('Error checking auth status: $e');
+      debugPrint('Error checking auth status: $e');
       _proceedWithNormalAuthCheck();
     }
   }

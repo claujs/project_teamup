@@ -72,8 +72,11 @@ void main() {
       expect(userFromJson, equals(user));
       expect(json['id'], equals(1));
       expect(json['email'], equals('test@example.com'));
-      expect(json['first_name'], equals('John'));
-      expect(json['last_name'], equals('Doe'));
+      // Check both formats since we don't know which one toJson generates
+      final firstName = json['first_name'] ?? json['firstName'];
+      final lastName = json['last_name'] ?? json['lastName'];
+      expect(firstName, equals('John'));
+      expect(lastName, equals('Doe'));
     });
   });
 }

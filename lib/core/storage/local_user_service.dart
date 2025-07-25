@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:crypto/crypto.dart';
+import 'package:flutter/foundation.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 
 class LocalUserService {
@@ -19,7 +20,7 @@ class LocalUserService {
       _usersBox = await Hive.openBox<dynamic>(_usersBoxName);
       _credentialsBox = await Hive.openBox<dynamic>(_credentialsBoxName);
     } catch (e) {
-      print('Error opening Hive boxes, clearing corrupted data: $e');
+      debugPrint('Error opening Hive boxes, clearing corrupted data: $e');
       // Em caso de erro, tentar limpar e recriar as boxes
       await _clearCorruptedData();
       _usersBox = await Hive.openBox<dynamic>(_usersBoxName);
@@ -32,7 +33,7 @@ class LocalUserService {
       await Hive.deleteBoxFromDisk(_usersBoxName);
       await Hive.deleteBoxFromDisk(_credentialsBoxName);
     } catch (e) {
-      print('Error clearing corrupted data: $e');
+      debugPrint('Error clearing corrupted data: $e');
     }
   }
 
@@ -81,17 +82,17 @@ class LocalUserService {
       final result = _usersBox.get(email);
       if (result == null) return null;
 
-      print('getUser - Type of result: ${result.runtimeType}');
+      debugPrint('getUser - Type of result: ${result.runtimeType}');
 
       // Sempre fazer conversão segura para garantir o tipo correto
       if (result is Map) {
         return Map<String, dynamic>.from(result);
       } else {
-        print('getUser - Result is not a Map: $result');
+        debugPrint('getUser - Result is not a Map: $result');
         return null;
       }
     } catch (e) {
-      print('Error getting user: $e');
+      debugPrint('Error getting user: $e');
       return null;
     }
   }
@@ -106,7 +107,7 @@ class LocalUserService {
 
       return storedPassword is String && storedPassword == hashedPassword;
     } catch (e) {
-      print('Error validating user: $e');
+      debugPrint('Error validating user: $e');
       return false;
     }
   }
@@ -114,11 +115,11 @@ class LocalUserService {
   Future<List<Map<String, dynamic>>> getAllUsers() async {
     try {
       return _usersBox.values
-          .where((user) => user is Map)
-          .map((user) => Map<String, dynamic>.from(user as Map))
+          .whereType<Map>()
+          .map((user) => Map<String, dynamic>.from(user))
           .toList();
     } catch (e) {
-      print('Error getting all users: $e');
+      debugPrint('Error getting all users: $e');
       return [];
     }
   }
@@ -140,17 +141,17 @@ class LocalUserService {
       final result = _credentialsBox.get(_credentialsKey);
       if (result == null) return null;
 
-      print('getSavedCredentials - Type of result: ${result.runtimeType}');
+      debugPrint('getSavedCredentials - Type of result: ${result.runtimeType}');
 
       // Sempre fazer conversão segura para garantir o tipo correto
       if (result is Map) {
         return Map<String, dynamic>.from(result);
       } else {
-        print('getSavedCredentials - Result is not a Map: $result');
+        debugPrint('getSavedCredentials - Result is not a Map: $result');
         return null;
       }
     } catch (e) {
-      print('Error getting saved credentials: $e');
+      debugPrint('Error getting saved credentials: $e');
       return null;
     }
   }
@@ -187,9 +188,9 @@ class LocalUserService {
       _usersBox = await Hive.openBox<dynamic>(_usersBoxName);
       _credentialsBox = await Hive.openBox<dynamic>(_credentialsBoxName);
 
-      print('All user data cleared and boxes recreated');
+      debugPrint('All user data cleared and boxes recreated');
     } catch (e) {
-      print('Error clearing all data: $e');
+      debugPrint('Error clearing all data: $e');
     }
   }
 }

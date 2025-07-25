@@ -4,6 +4,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import '../../../../core/providers.dart';
 import '../../../../shared/widgets/loading_widget.dart';
 import 'chat_screen.dart';
+import 'package:faker/faker.dart';
 
 class UserDetailScreen extends ConsumerWidget {
   final String userId;
@@ -175,6 +176,34 @@ class UserDetailScreen extends ConsumerWidget {
                       ),
                     ],
                   ),
+                  const SizedBox(height: 16),
+                  Consumer(
+                    builder: (context, ref, child) {
+                      final isFavorite = ref
+                          .watch(favoritesNotifierProvider)
+                          .maybeWhen(
+                            loaded: (favorites) =>
+                                favorites.any((u) => u.id == user.id),
+                            orElse: () => false,
+                          );
+                      return ElevatedButton.icon(
+                        onPressed: () {
+                          ref
+                              .read(favoritesNotifierProvider.notifier)
+                              .toggleFavorite(user);
+                        },
+                        icon: Icon(isFavorite ? Icons.star : Icons.star_border),
+                        label: Text(
+                          isFavorite
+                              ? 'Remover dos Favoritos'
+                              : 'Adicionar aos Favoritos',
+                        ),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: isFavorite ? Colors.yellow : null,
+                        ),
+                      );
+                    },
+                  ),
                 ],
               ),
             ),
@@ -223,15 +252,8 @@ class UserDetailScreen extends ConsumerWidget {
   }
 
   String _generateBio(String firstName) {
-    final sentences = [
-      'Apaixonado por tecnologia e inovação.',
-      'Sempre buscando aprender algo novo.',
-      'Gosto de trabalhar em equipe e compartilhar conhecimento.',
-      'Focado em entregar valor para o usuário final.',
-      'Entusiasta de metodologias ágeis.',
-    ];
-
-    return sentences.take(2).join(' ');
+    final faker = Faker();
+    return faker.lorem.sentences(2).join(' ');
   }
 }
 

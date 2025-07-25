@@ -19,18 +19,18 @@ class User with _$User {
 
   factory User.fromJson(Map<String, dynamic> json) {
     try {
+      // Handle both API format (first_name/last_name) and internal format (firstName/lastName)
       return User(
         id: json['id'] as int,
         email: json['email'] as String,
-        firstName: json['first_name'] as String,
-        lastName: json['last_name'] as String,
+        firstName: (json['first_name'] ?? json['firstName']) as String,
+        lastName: (json['last_name'] ?? json['lastName']) as String,
         avatar: json['avatar'] as String,
         position: json['position'] as String?,
         department: json['department'] as String?,
         bio: json['bio'] as String?,
       );
     } catch (e) {
-      // Log the error and provide fallback values for debugging
       debugPrint('Error parsing User from JSON: $e');
       debugPrint('JSON data: $json');
       throw Exception('Failed to parse User: $e');

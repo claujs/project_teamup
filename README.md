@@ -12,6 +12,7 @@
 - **Feed de Postagens**: Feed com postagens simuladas contendo texto, autor, data e fotos
 - **Modo Offline**: Cache local para usuários e posts funcionando sem conexão
 - **Testes**: Testes unitários e de widget implementados
+- **Favoritos**: Adição e remoção de usuários favoritos com persistência local para modo offline.
 
 ## 🏗️ Arquitetura
 
@@ -189,6 +190,7 @@ LoginScreen → HomeScreen
 - [ ] **Notificações Push**: Sistema de notificações
 - [ ] **Chat em Tempo Real**: Mensagens entre usuários
 - [ ] **Filtros Avançados**: Busca por departamento, cargo, etc.
+- [x] **Favoritos com Offline Support**
 
 ## 📝 Decisões Técnicas
 

@@ -8,6 +8,7 @@ import '../features/posts/data/repositories/post_repository_impl.dart';
 import '../features/posts/domain/repositories/post_repository.dart';
 import '../features/users/data/repositories/user_repository_impl.dart';
 import '../features/users/domain/repositories/user_repository.dart';
+import '../features/users/presentation/favorites_notifier.dart';
 
 // Core providers
 final apiClientProvider = Provider<ApiClient>((ref) => ApiClient());
@@ -36,3 +37,8 @@ final postRepositoryProvider = Provider<PostRepository>((ref) {
     userRepository: ref.watch(userRepositoryProvider),
   );
 });
+
+final favoritesNotifierProvider =
+    StateNotifierProvider<FavoritesNotifier, FavoritesState>((ref) {
+      return FavoritesNotifier(ref.watch(localStorageProvider));
+    });
