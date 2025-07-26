@@ -43,27 +43,22 @@ class User with _$User {
 extension UserX on User {
   String get fullName => '$firstName $lastName';
 
-  /// Gera informações de trabalho para este usuário
   String getJobInfo(BuildContext context) {
     return JobInfoService.generateJobInfo(context, id);
   }
 
-  /// Gera o cargo para este usuário
   String getJobTitle(BuildContext context) {
     return JobInfoService.generateJobTitle(context, id);
   }
 
-  /// Gera o departamento para este usuário
   String getDepartment(BuildContext context) {
     return JobInfoService.generateDepartment(context, id);
   }
 
-  /// Gera a localização para este usuário
   String getLocation() {
     return JobInfoService.generateLocation(id);
   }
 
-  /// Gera uma biografia para este usuário
   String getBio() {
     return JobInfoService.generateBio(firstName);
   }

@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 import '../../../core/providers.dart';
 import '../domain/entities/user.dart';
+import '../domain/entities/advanced_filter.dart';
 import '../domain/repositories/user_repository.dart';
 
 part 'users_notifier.freezed.dart';
@@ -65,10 +66,22 @@ class UsersNotifier extends StateNotifier<UsersState> {
     final result = await _userRepository.searchUsers(query);
     result.fold(
       (failure) => state = UsersState.error(failure.message),
-      (users) => state = UsersState.loaded(
-        users: users,
-        hasReachedEnd: true, // Na busca, consideramos que não há paginação
-      ),
+      (users) => state = UsersState.loaded(users: users, hasReachedEnd: true),
+    );
+  }
+
+  Future<void> searchUsersAdvanced(AdvancedFilter filter) async {
+    if (filter.isEmpty) {
+      await loadUsers(refresh: true);
+      return;
+    }
+
+    state = const UsersState.loading();
+
+    final result = await _userRepository.searchUsersAdvanced(filter);
+    result.fold(
+      (failure) => state = UsersState.error(failure.message),
+      (users) => state = UsersState.loaded(users: users, hasReachedEnd: true),
     );
   }
 
@@ -78,19 +91,16 @@ class UsersNotifier extends StateNotifier<UsersState> {
       return;
     }
 
-    // Verifica se ainda há páginas para carregar
     if (_currentPage > _totalPages && _totalPages > 0) {
       return;
     }
 
-    // Atualiza estado para mostrar carregamento
     state = currentState.copyWith(isLoadingMore: true);
 
     final result = await _userRepository.getUsers(page: _currentPage);
 
     result.fold(
       (failure) {
-        // Em caso de erro, volta ao estado anterior sem o loading
         state = currentState.copyWith(isLoadingMore: false);
       },
       (paginatedUsers) {
@@ -108,7 +118,6 @@ class UsersNotifier extends StateNotifier<UsersState> {
     );
   }
 
-  // Método para atualizar informações de paginação da API
   void updatePaginationInfo(int totalPages) {
     _totalPages = totalPages;
   }

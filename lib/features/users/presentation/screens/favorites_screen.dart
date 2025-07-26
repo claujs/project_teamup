@@ -105,7 +105,6 @@ class _FavoritesScreenState extends ConsumerState<FavoritesScreen>
           SizedBox(height: isTablet ? 32 : 24),
           ElevatedButton.icon(
             onPressed: () {
-              // Navegar para a aba de usuários
               ref.read(uiStateProvider.notifier).setHomeNavigationIndex(1);
             },
             icon: Icon(Icons.people, size: isTablet ? 24 : 20),

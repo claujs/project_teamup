@@ -2,10 +2,46 @@ import 'package:flutter/material.dart';
 import 'package:faker/faker.dart';
 import '../../l10n/app_localizations.dart';
 
-/// Serviço responsável por gerar informações de trabalho baseadas no ID do usuário
-/// Remove a lógica de negócio das views
 class JobInfoService {
-  /// Gera um cargo determinístico baseado no ID do usuário
+  static const List<String> _jobTitlesEn = [
+    'Frontend Developer',
+    'Backend Developer',
+    'UX/UI Designer',
+    'Product Manager',
+    'DevOps Engineer',
+    'Data Scientist',
+    'QA Engineer',
+    'Tech Lead',
+  ];
+
+  static const List<String> _jobTitlesPt = [
+    'Desenvolvedor Frontend',
+    'Desenvolvedor Backend',
+    'Designer UX/UI',
+    'Gerente de Produto',
+    'Engenheiro DevOps',
+    'Cientista de Dados',
+    'Engenheiro QA',
+    'Tech Lead',
+  ];
+
+  static const List<String> _departmentsEn = [
+    'Technology',
+    'Product',
+    'Design',
+    'Engineering',
+    'Data',
+    'Quality',
+  ];
+
+  static const List<String> _departmentsPt = [
+    'Tecnologia',
+    'Produto',
+    'Design',
+    'Engenharia',
+    'Dados',
+    'Qualidade',
+  ];
   static String generateJobTitle(BuildContext context, int userId) {
     final l10n = AppLocalizations.of(context)!;
     final jobTitles = [
@@ -23,7 +59,15 @@ class JobInfoService {
     return jobTitles[jobIndex];
   }
 
-  /// Gera um departamento determinístico baseado no ID do usuário
+  static String generateJobTitleWithoutContext(
+    int userId, {
+    bool isPortuguese = true,
+  }) {
+    final jobTitles = isPortuguese ? _jobTitlesPt : _jobTitlesEn;
+    final jobIndex = userId % jobTitles.length;
+    return jobTitles[jobIndex];
+  }
+
   static String generateDepartment(BuildContext context, int userId) {
     final l10n = AppLocalizations.of(context)!;
     final departments = [
@@ -39,14 +83,21 @@ class JobInfoService {
     return departments[deptIndex];
   }
 
-  /// Gera informações completas de trabalho (cargo - departamento)
+  static String generateDepartmentWithoutContext(
+    int userId, {
+    bool isPortuguese = true,
+  }) {
+    final departments = isPortuguese ? _departmentsPt : _departmentsEn;
+    final deptIndex = userId % departments.length;
+    return departments[deptIndex];
+  }
+
   static String generateJobInfo(BuildContext context, int userId) {
     final jobTitle = generateJobTitle(context, userId);
     final department = generateDepartment(context, userId);
     return '$jobTitle - $department';
   }
 
-  /// Gera uma localização determinística baseada no ID do usuário
   static String generateLocation(int userId) {
     const locations = [
       'São Paulo, SP',
@@ -65,7 +116,6 @@ class JobInfoService {
     return locations[locationIndex];
   }
 
-  /// Gera uma biografia usando Faker
   static String generateBio(String firstName) {
     final faker = Faker();
     return faker.lorem.sentences(2).join(' ');

@@ -25,7 +25,6 @@ class FavoritesNotifier extends StateNotifier<FavoritesState> {
   Future<void> loadFavorites() async {
     state = const FavoritesState.loading();
     try {
-      // Simula delay de API
       await Future.delayed(const Duration(seconds: 3));
 
       final cached = await _localStorage.getObject<List<dynamic>>(

@@ -8,6 +8,8 @@ import '../../../../l10n/app_localizations.dart';
 import '../users_notifier.dart';
 import '../../../../core/utils/responsive_utils.dart';
 import '../../domain/entities/user.dart';
+import '../../domain/entities/advanced_filter.dart';
+import '../widgets/advanced_filter_dialog.dart';
 
 class UsersScreen extends ConsumerStatefulWidget {
   const UsersScreen({super.key});
@@ -20,20 +22,19 @@ class _UsersScreenState extends ConsumerState<UsersScreen>
     with WidgetsBindingObserver {
   final _searchController = TextEditingController();
   final _scrollController = ScrollController();
+  AdvancedFilter _currentFilter = const AdvancedFilter();
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
 
-    // Carregar dados iniciais de forma segura
     Future.microtask(() {
       if (mounted) {
         ref.read(usersNotifierProvider.notifier).loadUsers();
       }
     });
 
-    // Adicionar listener para scroll de forma otimizada
     _scrollController.addListener(_onScroll);
   }
 
@@ -42,7 +43,6 @@ class _UsersScreenState extends ConsumerState<UsersScreen>
 
     final usersState = ref.read(usersNotifierProvider);
 
-    // Só tenta carregar mais se estiver no estado loaded, não estiver carregando e não chegou ao fim
     final shouldLoadMore = usersState.maybeWhen(
       loaded: (users, isLoadingMore, hasReachedEnd, currentPage, totalPages) =>
           !isLoadingMore && !hasReachedEnd,
@@ -87,6 +87,30 @@ class _UsersScreenState extends ConsumerState<UsersScreen>
     ref.read(usersNotifierProvider.notifier).searchUsers(query);
   }
 
+  void _showAdvancedFilterDialog() {
+    showDialog(
+      context: context,
+      builder: (context) => AdvancedFilterDialog(
+        initialFilter: _currentFilter,
+        onApply: (filter) {
+          setState(() {
+            _currentFilter = filter;
+            _searchController.clear();
+          });
+          ref.read(usersNotifierProvider.notifier).searchUsersAdvanced(filter);
+        },
+      ),
+    );
+  }
+
+  void _clearAllFilters() {
+    setState(() {
+      _currentFilter = const AdvancedFilter();
+      _searchController.clear();
+    });
+    ref.read(usersNotifierProvider.notifier).loadUsers(refresh: true);
+  }
+
   @override
   Widget build(BuildContext context) {
     final usersState = ref.watch(usersNotifierProvider);
@@ -101,33 +125,91 @@ class _UsersScreenState extends ConsumerState<UsersScreen>
                 horizontal: isTablet ? 0 : 16,
                 vertical: 16,
               ),
-              child: TextField(
-                controller: _searchController,
-                decoration: InputDecoration(
-                  hintText: AppLocalizations.of(context)!.searchUsers,
-                  prefixIcon: Icon(Icons.search, size: isTablet ? 24 : 20),
-                  suffixIcon: _searchController.text.isNotEmpty
-                      ? IconButton(
-                          icon: Icon(Icons.clear, size: isTablet ? 24 : 20),
-                          onPressed: () {
-                            _searchController.clear();
-                            _onSearchChanged('');
-                          },
-                        )
-                      : null,
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(isTablet ? 28 : 24),
-                    borderSide: BorderSide.none,
+              child: Row(
+                children: [
+                  Expanded(
+                    child: TextField(
+                      controller: _searchController,
+                      decoration: InputDecoration(
+                        hintText: AppLocalizations.of(context)!.searchUsers,
+                        prefixIcon: Icon(
+                          Icons.search,
+                          size: isTablet ? 24 : 20,
+                        ),
+                        suffixIcon: _searchController.text.isNotEmpty
+                            ? IconButton(
+                                icon: Icon(
+                                  Icons.clear,
+                                  size: isTablet ? 24 : 20,
+                                ),
+                                onPressed: () {
+                                  _searchController.clear();
+                                  _onSearchChanged('');
+                                },
+                              )
+                            : null,
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(
+                            isTablet ? 28 : 24,
+                          ),
+                          borderSide: BorderSide.none,
+                        ),
+                        filled: true,
+                        fillColor: Colors.grey[100],
+                        contentPadding: EdgeInsets.symmetric(
+                          vertical: isTablet ? 16 : 12,
+                          horizontal: 16,
+                        ),
+                      ),
+                      style: TextStyle(fontSize: isTablet ? 18 : 16),
+                      onChanged: _onSearchChanged,
+                    ),
                   ),
-                  filled: true,
-                  fillColor: Colors.grey[100],
-                  contentPadding: EdgeInsets.symmetric(
-                    vertical: isTablet ? 16 : 12,
-                    horizontal: 16,
+                  SizedBox(width: isTablet ? 12 : 8),
+                  Container(
+                    decoration: BoxDecoration(
+                      color: _currentFilter.isEmpty
+                          ? Colors.grey[100]
+                          : Theme.of(
+                              context,
+                            ).primaryColor.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(isTablet ? 16 : 12),
+                      border: _currentFilter.isEmpty
+                          ? null
+                          : Border.all(
+                              color: Theme.of(
+                                context,
+                              ).primaryColor.withValues(alpha: 0.3),
+                            ),
+                    ),
+                    child: IconButton(
+                      onPressed: _showAdvancedFilterDialog,
+                      icon: Icon(
+                        Icons.filter_list,
+                        color: _currentFilter.isEmpty
+                            ? Colors.grey[600]
+                            : Theme.of(context).primaryColor,
+                      ),
+                      iconSize: isTablet ? 24 : 20,
+                      tooltip: AppLocalizations.of(context)!.advancedFilter,
+                    ),
                   ),
-                ),
-                style: TextStyle(fontSize: isTablet ? 18 : 16),
-                onChanged: _onSearchChanged,
+                  if (!_currentFilter.isEmpty) ...[
+                    SizedBox(width: isTablet ? 8 : 4),
+                    Container(
+                      decoration: BoxDecoration(
+                        color: Colors.grey[100],
+                        borderRadius: BorderRadius.circular(isTablet ? 16 : 12),
+                      ),
+                      child: IconButton(
+                        onPressed: _clearAllFilters,
+                        icon: Icon(Icons.clear, color: Colors.grey[600]),
+                        iconSize: isTablet ? 24 : 20,
+                        tooltip: AppLocalizations.of(context)!.clear,
+                      ),
+                    ),
+                  ],
+                ],
               ),
             ),
           ),
@@ -254,7 +336,6 @@ class _UsersScreenState extends ConsumerState<UsersScreen>
       itemCount: users.length + (isLoadingMore || !hasReachedEnd ? 1 : 0),
       itemBuilder: (context, index) {
         if (index == users.length) {
-          // Item de carregamento ou fim dos dados
           return _buildLoadingOrEndIndicator(isLoadingMore, hasReachedEnd);
         }
 
@@ -290,7 +371,6 @@ class _UsersScreenState extends ConsumerState<UsersScreen>
         itemCount: users.length + (isLoadingMore || !hasReachedEnd ? 1 : 0),
         itemBuilder: (context, index) {
           if (index == users.length) {
-            // Item de carregamento ou fim dos dados para grid
             return _buildLoadingOrEndIndicator(
               isLoadingMore,
               hasReachedEnd,
