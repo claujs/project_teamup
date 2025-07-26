@@ -5,6 +5,7 @@ import '../../../../core/providers.dart';
 import '../../../../shared/widgets/loading_widget.dart';
 import '../../../chat/presentation/screens/chat_screen.dart';
 import '../../domain/entities/user.dart';
+import '../../../../l10n/app_localizations.dart';
 
 class UserDetailScreen extends ConsumerWidget {
   final String userId;
@@ -13,9 +14,11 @@ class UserDetailScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context)!;
+
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Perfil'),
+        title: Text(l10n.profile),
         elevation: 0,
         backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         surfaceTintColor: Colors.transparent,
@@ -24,7 +27,7 @@ class UserDetailScreen extends ConsumerWidget {
         future: ref.read(userRepositoryProvider).getUserById(int.parse(userId)),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
-            return const LoadingWidget(message: 'Carregando perfil...');
+            return LoadingWidget(message: l10n.loadingProfile);
           }
 
           if (snapshot.hasError) {
@@ -35,13 +38,13 @@ class UserDetailScreen extends ConsumerWidget {
                   const Icon(Icons.error_outline, size: 64, color: Colors.red),
                   const SizedBox(height: 16),
                   Text(
-                    'Erro ao carregar perfil',
+                    l10n.errorLoadingProfile,
                     style: Theme.of(context).textTheme.headlineSmall,
                   ),
                   const SizedBox(height: 16),
                   ElevatedButton(
                     onPressed: () => Navigator.of(context).pop(),
-                    child: const Text('Voltar'),
+                    child: Text(l10n.back),
                   ),
                 ],
               ),
@@ -56,7 +59,7 @@ class UserDetailScreen extends ConsumerWidget {
                   const Icon(Icons.error_outline, size: 64, color: Colors.red),
                   const SizedBox(height: 16),
                   Text(
-                    'Usuário não encontrado',
+                    l10n.userNotFound,
                     style: Theme.of(context).textTheme.headlineSmall,
                   ),
                   const SizedBox(height: 8),
@@ -68,7 +71,7 @@ class UserDetailScreen extends ConsumerWidget {
                   const SizedBox(height: 16),
                   ElevatedButton(
                     onPressed: () => Navigator.of(context).pop(),
-                    child: const Text('Voltar'),
+                    child: Text(l10n.back),
                   ),
                 ],
               ),
@@ -106,28 +109,28 @@ class UserDetailScreen extends ConsumerWidget {
 
                   _InfoCard(
                     icon: Icons.email_outlined,
-                    title: 'E-mail',
+                    title: l10n.emailTitle,
                     content: user.email,
                   ),
                   const SizedBox(height: 16),
 
                   _InfoCard(
                     icon: Icons.business_outlined,
-                    title: 'Departamento',
+                    title: l10n.departmentTitle,
                     content: user.getDepartment(context),
                   ),
                   const SizedBox(height: 16),
 
                   _InfoCard(
                     icon: Icons.location_on_outlined,
-                    title: 'Localização',
+                    title: l10n.locationTitle,
                     content: user.getLocation(),
                   ),
                   const SizedBox(height: 16),
 
                   _InfoCard(
                     icon: Icons.info_outlined,
-                    title: 'Sobre',
+                    title: l10n.aboutTitle,
                     content: user.getBio(),
                   ),
                   const SizedBox(height: 32),
@@ -150,7 +153,7 @@ class UserDetailScreen extends ConsumerWidget {
                             );
                           },
                           icon: const Icon(Icons.message_outlined),
-                          label: const Text('Conversar'),
+                          label: Text(l10n.chatAction),
                         ),
                       ),
                       const SizedBox(width: 16),
@@ -158,15 +161,13 @@ class UserDetailScreen extends ConsumerWidget {
                         child: OutlinedButton.icon(
                           onPressed: () {
                             ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text(
-                                  'Funcionalidade em desenvolvimento',
-                                ),
+                              SnackBar(
+                                content: Text(l10n.featureInDevelopment),
                               ),
                             );
                           },
                           icon: const Icon(Icons.phone_outlined),
-                          label: const Text('Ligar'),
+                          label: Text(l10n.callAction),
                         ),
                       ),
                     ],
@@ -190,8 +191,8 @@ class UserDetailScreen extends ConsumerWidget {
                         icon: Icon(isFavorite ? Icons.star : Icons.star_border),
                         label: Text(
                           isFavorite
-                              ? 'Remover dos Favoritos'
-                              : 'Adicionar aos Favoritos',
+                              ? l10n.removeFromFavorites
+                              : l10n.addToFavorites,
                         ),
                         style: ElevatedButton.styleFrom(
                           backgroundColor: isFavorite ? Colors.yellow : null,
