@@ -280,11 +280,11 @@ lib/l10n/
 - [x] **Internacionalização (i18n)**: Suporte a múltiplos idiomas (Português/Inglês)
 - [ ] **CI/CD**: GitHub Actions para testes e build automático
 - [ ] **Modularização**: Separação em packages independentes
-- [ ] **Responsividade Avançada**: Layouts adaptativos para tablets
+- [x] **Responsividade Avançada**: Layouts adaptativos para tablets
 - [ ] **Tema Escuro**: Suporte a dark mode
 - [ ] **Notificações Push**: Sistema de notificações
-- [ ] **Chat em Tempo Real**: Mensagens entre usuários
-- [ ] **Filtros Avançados**: Busca por departamento, cargo, etc.
+- [x] **Chat em Tempo Real**: Mensagens entre usuários
+- [x] **Filtros Avançados**: Busca por departamento, cargo, etc.
 - [x] **Favoritos com Offline Support**
 
 ## 📝 Decisões Técnicas
@@ -293,6 +293,17 @@ lib/l10n/
 
 - **Clean Architecture**: Para escalabilidade e manutenibilidade
 - **Feature-first**: Organização por funcionalidades ao invés de camadas
+
+### Clean Code e SOLID
+
+O projeto segue princípios de Clean Code e SOLID:
+
+- **Single Responsibility Principle (SRP)**: Cada classe e módulo tem uma única responsabilidade (ex: repositórios lidam apenas com dados).
+- **Open-Closed Principle (OCP)**: Entidades e repositórios são extensíveis sem modificação.
+- **Liskov Substitution Principle (LSP)**: Classes derivadas podem substituir as bases sem alterar o comportamento.
+- **Interface Segregation Principle (ISP)**: Interfaces específicas por funcionalidade.
+- **Dependency Inversion Principle (DIP)**: Dependências injetadas via Riverpod.
+- **Clean Code Practices**: Nomes descritivos, funções curtas, comentários onde necessário, e código legível.
 
 ### Estado
 
