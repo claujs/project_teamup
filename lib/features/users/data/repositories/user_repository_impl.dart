@@ -24,7 +24,7 @@ class UserRepositoryImpl implements UserRepository {
        _localStorage = localStorage;
 
   @override
-  Future<Either<Failure, List<User>>> getUsers({int page = 1}) async {
+  Future<Either<Failure, PaginatedUsers>> getUsers({int page = 1}) async {
     try {
       if (await _networkInfo.isConnected) {
         final response = await _apiClient.dio.get(
@@ -38,11 +38,31 @@ class UserRepositoryImpl implements UserRepository {
         final userResponse = UserResponse.fromJson(response.data);
         final users = userResponse.data;
 
+        // Cache apenas os usuários desta página
         await cacheUsers(users);
 
-        return Right(users);
+        final paginatedUsers = PaginatedUsers(
+          users: users,
+          currentPage: userResponse.page,
+          totalPages: userResponse.totalPages,
+          total: userResponse.total,
+        );
+
+        return Right(paginatedUsers);
       } else {
-        return getCachedUsers();
+        // Para cache, retornamos todos os usuários como uma única página
+        final cachedUsersResult = await getCachedUsers();
+        return cachedUsersResult.fold(
+          (failure) => Left(failure),
+          (users) => Right(
+            PaginatedUsers(
+              users: users,
+              currentPage: 1,
+              totalPages: 1,
+              total: users.length,
+            ),
+          ),
+        );
       }
     } on DioException catch (e) {
       return Left(ServerFailure(e.message ?? 'Server error'));
@@ -58,8 +78,8 @@ class UserRepositoryImpl implements UserRepository {
   }) async {
     try {
       final usersResult = await getUsers(page: page);
-      return usersResult.fold((failure) => Left(failure), (users) {
-        final filteredUsers = users
+      return usersResult.fold((failure) => Left(failure), (paginatedUsers) {
+        final filteredUsers = paginatedUsers.users
             .where(
               (user) =>
                   user.fullName.toLowerCase().contains(query.toLowerCase()) ||

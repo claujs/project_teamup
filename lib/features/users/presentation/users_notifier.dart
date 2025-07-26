@@ -10,13 +10,20 @@ part 'users_notifier.freezed.dart';
 class UsersState with _$UsersState {
   const factory UsersState.initial() = _Initial;
   const factory UsersState.loading() = _Loading;
-  const factory UsersState.loaded(List<User> users) = _Loaded;
+  const factory UsersState.loaded({
+    required List<User> users,
+    @Default(false) bool isLoadingMore,
+    @Default(false) bool hasReachedEnd,
+    @Default(0) int currentPage,
+    @Default(0) int totalPages,
+  }) = _Loaded;
   const factory UsersState.error(String message) = _Error;
 }
 
 class UsersNotifier extends StateNotifier<UsersState> {
   final UserRepository _userRepository;
   int _currentPage = 1;
+  int _totalPages = 0;
   final List<User> _allUsers = [];
 
   UsersNotifier(this._userRepository) : super(const UsersState.initial());
@@ -24,21 +31,26 @@ class UsersNotifier extends StateNotifier<UsersState> {
   Future<void> loadUsers({bool refresh = false}) async {
     if (refresh) {
       _currentPage = 1;
+      _totalPages = 0;
       _allUsers.clear();
     }
 
     state = const UsersState.loading();
 
-    // Simula delay de API
-    await Future.delayed(const Duration(seconds: 3));
-
     final result = await _userRepository.getUsers(page: _currentPage);
     result.fold((failure) => state = UsersState.error(failure.message), (
-      users,
+      paginatedUsers,
     ) {
-      _allUsers.addAll(users);
-      state = UsersState.loaded(List.from(_allUsers));
+      _allUsers.addAll(paginatedUsers.users);
+      _totalPages = paginatedUsers.totalPages;
       _currentPage++;
+
+      state = UsersState.loaded(
+        users: List.from(_allUsers),
+        hasReachedEnd: _currentPage > _totalPages,
+        currentPage: paginatedUsers.currentPage,
+        totalPages: _totalPages,
+      );
     });
   }
 
@@ -53,20 +65,52 @@ class UsersNotifier extends StateNotifier<UsersState> {
     final result = await _userRepository.searchUsers(query);
     result.fold(
       (failure) => state = UsersState.error(failure.message),
-      (users) => state = UsersState.loaded(users),
+      (users) => state = UsersState.loaded(
+        users: users,
+        hasReachedEnd: true, // Na busca, consideramos que não há paginação
+      ),
     );
   }
 
   Future<void> loadMore() async {
-    if (state is! _Loaded) return;
+    final currentState = state;
+    if (currentState is! _Loaded || currentState.isLoadingMore) {
+      return;
+    }
+
+    // Verifica se ainda há páginas para carregar
+    if (_currentPage > _totalPages && _totalPages > 0) {
+      return;
+    }
+
+    // Atualiza estado para mostrar carregamento
+    state = currentState.copyWith(isLoadingMore: true);
 
     final result = await _userRepository.getUsers(page: _currentPage);
 
-    result.fold((failure) {}, (users) {
-      _allUsers.addAll(users);
-      state = UsersState.loaded(List.from(_allUsers));
-      _currentPage++;
-    });
+    result.fold(
+      (failure) {
+        // Em caso de erro, volta ao estado anterior sem o loading
+        state = currentState.copyWith(isLoadingMore: false);
+      },
+      (paginatedUsers) {
+        _allUsers.addAll(paginatedUsers.users);
+        _currentPage++;
+
+        state = UsersState.loaded(
+          users: List.from(_allUsers),
+          isLoadingMore: false,
+          hasReachedEnd: _currentPage > _totalPages,
+          currentPage: paginatedUsers.currentPage,
+          totalPages: _totalPages,
+        );
+      },
+    );
+  }
+
+  // Método para atualizar informações de paginação da API
+  void updatePaginationInfo(int totalPages) {
+    _totalPages = totalPages;
   }
 }
 

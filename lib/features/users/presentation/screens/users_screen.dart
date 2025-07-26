@@ -7,6 +7,7 @@ import '../../../../shared/widgets/users_skeleton.dart';
 import '../../../../l10n/app_localizations.dart';
 import '../users_notifier.dart';
 import '../../../../core/utils/responsive_utils.dart';
+import '../../domain/entities/user.dart';
 
 class UsersScreen extends ConsumerStatefulWidget {
   const UsersScreen({super.key});
@@ -19,7 +20,6 @@ class _UsersScreenState extends ConsumerState<UsersScreen>
     with WidgetsBindingObserver {
   final _searchController = TextEditingController();
   final _scrollController = ScrollController();
-  bool _isLoadingMore = false;
 
   @override
   void initState() {
@@ -38,17 +38,25 @@ class _UsersScreenState extends ConsumerState<UsersScreen>
   }
 
   void _onScroll() {
-    if (!mounted || _isLoadingMore) return;
+    if (!mounted) return;
+
+    final usersState = ref.read(usersNotifierProvider);
+
+    // Só tenta carregar mais se estiver no estado loaded, não estiver carregando e não chegou ao fim
+    final shouldLoadMore = usersState.maybeWhen(
+      loaded: (users, isLoadingMore, hasReachedEnd, currentPage, totalPages) =>
+          !isLoadingMore && !hasReachedEnd,
+      orElse: () => false,
+    );
+
+    if (!shouldLoadMore) {
+      return;
+    }
 
     if (_scrollController.hasClients &&
         _scrollController.position.pixels >=
             _scrollController.position.maxScrollExtent - 200) {
-      _isLoadingMore = true;
-      ref.read(usersNotifierProvider.notifier).loadMore().then((_) {
-        if (mounted) {
-          _isLoadingMore = false;
-        }
-      });
+      ref.read(usersNotifierProvider.notifier).loadMore();
     }
   }
 
@@ -134,7 +142,14 @@ class _UsersScreenState extends ConsumerState<UsersScreen>
                 padding: EdgeInsets.symmetric(horizontal: isTablet ? 24 : 16),
                 child: UsersSkeleton(itemCount: isTablet ? 12 : 8),
               ),
-              loaded: (users) => users.isEmpty
+              loaded:
+                  (
+                    users,
+                    isLoadingMore,
+                    hasReachedEnd,
+                    currentPage,
+                    totalPages,
+                  ) => users.isEmpty
                   ? Center(
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
@@ -158,8 +173,20 @@ class _UsersScreenState extends ConsumerState<UsersScreen>
                   : RefreshIndicator(
                       onRefresh: _refreshUsers,
                       child: ResponsiveBuilder(
-                        mobile: _buildMobileLayout(users),
-                        tablet: _buildTabletLayout(users),
+                        mobile: _buildMobileLayout(
+                          users,
+                          isLoadingMore,
+                          hasReachedEnd,
+                          currentPage,
+                          totalPages,
+                        ),
+                        tablet: _buildTabletLayout(
+                          users,
+                          isLoadingMore,
+                          hasReachedEnd,
+                          currentPage,
+                          totalPages,
+                        ),
                       ),
                     ),
               error: (message) => Center(
@@ -214,12 +241,23 @@ class _UsersScreenState extends ConsumerState<UsersScreen>
     );
   }
 
-  Widget _buildMobileLayout(List<dynamic> users) {
+  Widget _buildMobileLayout(
+    List<dynamic> users,
+    bool isLoadingMore,
+    bool hasReachedEnd,
+    int currentPage,
+    int totalPages,
+  ) {
     return ListView.builder(
       controller: _scrollController,
       padding: const EdgeInsets.symmetric(horizontal: 16),
-      itemCount: users.length,
+      itemCount: users.length + (isLoadingMore || !hasReachedEnd ? 1 : 0),
       itemBuilder: (context, index) {
+        if (index == users.length) {
+          // Item de carregamento ou fim dos dados
+          return _buildLoadingOrEndIndicator(isLoadingMore, hasReachedEnd);
+        }
+
         final user = users[index];
         return _UserCard(
           user: user,
@@ -230,7 +268,13 @@ class _UsersScreenState extends ConsumerState<UsersScreen>
     );
   }
 
-  Widget _buildTabletLayout(List<dynamic> users) {
+  Widget _buildTabletLayout(
+    List<dynamic> users,
+    bool isLoadingMore,
+    bool hasReachedEnd,
+    int currentPage,
+    int totalPages,
+  ) {
     final isLandscape = context.isLandscape;
     final crossAxisCount = isLandscape ? 3 : 2;
 
@@ -243,8 +287,17 @@ class _UsersScreenState extends ConsumerState<UsersScreen>
           mainAxisSpacing: 16,
           childAspectRatio: isLandscape ? 1.4 : 1.3,
         ),
-        itemCount: users.length,
+        itemCount: users.length + (isLoadingMore || !hasReachedEnd ? 1 : 0),
         itemBuilder: (context, index) {
+          if (index == users.length) {
+            // Item de carregamento ou fim dos dados para grid
+            return _buildLoadingOrEndIndicator(
+              isLoadingMore,
+              hasReachedEnd,
+              isGrid: true,
+            );
+          }
+
           final user = users[index];
           return _UserCard(
             user: user,
@@ -255,10 +308,50 @@ class _UsersScreenState extends ConsumerState<UsersScreen>
       ),
     );
   }
+
+  Widget _buildLoadingOrEndIndicator(
+    bool isLoadingMore,
+    bool hasReachedEnd, {
+    bool isGrid = false,
+  }) {
+    if (isLoadingMore) {
+      return Container(
+        padding: const EdgeInsets.symmetric(vertical: 16),
+        child: const Center(child: CircularProgressIndicator()),
+      );
+    } else if (hasReachedEnd) {
+      return Container(
+        padding: const EdgeInsets.symmetric(vertical: 24),
+        child: Center(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                Icons.check_circle_outline,
+                color: Colors.grey[400],
+                size: isGrid ? 32 : 24,
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'Todos os usuários foram carregados',
+                style: TextStyle(
+                  color: Colors.grey[600],
+                  fontSize: isGrid ? 14 : 12,
+                ),
+                textAlign: TextAlign.center,
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    return const SizedBox.shrink();
+  }
 }
 
 class _UserCard extends StatelessWidget {
-  final dynamic user;
+  final User user;
   final VoidCallback onTap;
   final bool isTablet;
 

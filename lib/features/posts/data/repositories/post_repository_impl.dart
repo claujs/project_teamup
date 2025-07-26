@@ -31,7 +31,7 @@ class PostRepositoryImpl implements PostRepository {
         final usersResult = await _userRepository.getUsers(page: 1);
         final users = usersResult.fold(
           (failure) => <User>[],
-          (usersList) => usersList,
+          (paginatedUsers) => paginatedUsers.users,
         );
 
         final posts = await _generateFakePostsWithRealUsers(users);

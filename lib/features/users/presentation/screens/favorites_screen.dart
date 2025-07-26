@@ -7,6 +7,7 @@ import '../../../../shared/widgets/favorites_skeleton.dart';
 import '../../../../core/utils/responsive_utils.dart';
 import '../../../../l10n/app_localizations.dart';
 import '../../../../core/providers.dart';
+import '../../domain/entities/user.dart';
 
 class FavoritesScreen extends ConsumerStatefulWidget {
   const FavoritesScreen({super.key});
@@ -253,7 +254,7 @@ class _FavoritesScreenState extends ConsumerState<FavoritesScreen>
 }
 
 class _FavoriteCard extends StatelessWidget {
-  final dynamic user;
+  final User user;
   final VoidCallback onTap;
   final VoidCallback onRemove;
   final bool isTablet;
