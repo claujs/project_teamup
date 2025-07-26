@@ -181,7 +181,7 @@ void main() {
           final responsiveWidget = ResponsiveBuilder(
             mobile: Padding(
               padding: const EdgeInsets.all(24.0),
-              child: Container(child: const Text('Mobile Auth Form')),
+              child: const Text('Mobile Auth Form'),
             ),
             tablet: Center(
               child: ConstrainedBox(
@@ -190,7 +190,7 @@ void main() {
                   elevation: 4,
                   child: Padding(
                     padding: const EdgeInsets.all(32.0),
-                    child: Container(child: const Text('Tablet Auth Form')),
+                    child: const Text('Tablet Auth Form'),
                   ),
                 ),
               ),
@@ -202,7 +202,7 @@ void main() {
                   elevation: 8,
                   child: Padding(
                     padding: const EdgeInsets.all(48.0),
-                    child: Container(child: const Text('Desktop Auth Form')),
+                    child: const Text('Desktop Auth Form'),
                   ),
                 ),
               ),

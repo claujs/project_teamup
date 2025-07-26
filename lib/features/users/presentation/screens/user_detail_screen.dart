@@ -6,6 +6,7 @@ import '../../../../shared/widgets/loading_widget.dart';
 import '../../../chat/presentation/screens/chat_screen.dart';
 import '../../domain/entities/user.dart';
 import '../../../../l10n/app_localizations.dart';
+import '../widgets/info_card.dart';
 
 class UserDetailScreen extends ConsumerWidget {
   final String userId;
@@ -107,28 +108,28 @@ class UserDetailScreen extends ConsumerWidget {
                   ),
                   const SizedBox(height: 32),
 
-                  _InfoCard(
+                  InfoCard(
                     icon: Icons.email_outlined,
                     title: l10n.emailTitle,
                     content: user.email,
                   ),
                   const SizedBox(height: 16),
 
-                  _InfoCard(
+                  InfoCard(
                     icon: Icons.business_outlined,
                     title: l10n.departmentTitle,
                     content: user.getDepartment(context),
                   ),
                   const SizedBox(height: 16),
 
-                  _InfoCard(
+                  InfoCard(
                     icon: Icons.location_on_outlined,
                     title: l10n.locationTitle,
                     content: user.getLocation(),
                   ),
                   const SizedBox(height: 16),
 
-                  _InfoCard(
+                  InfoCard(
                     icon: Icons.info_outlined,
                     title: l10n.aboutTitle,
                     content: user.getBio(),
@@ -205,49 +206,6 @@ class UserDetailScreen extends ConsumerWidget {
             ),
           );
         },
-      ),
-    );
-  }
-}
-
-class _InfoCard extends StatelessWidget {
-  final IconData icon;
-  final String title;
-  final String content;
-
-  const _InfoCard({
-    required this.icon,
-    required this.title,
-    required this.content,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Row(
-          children: [
-            Icon(icon, color: Theme.of(context).colorScheme.primary, size: 24),
-            const SizedBox(width: 16),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    title,
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: Colors.grey[600],
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(content, style: Theme.of(context).textTheme.bodyMedium),
-                ],
-              ),
-            ),
-          ],
-        ),
       ),
     );
   }
