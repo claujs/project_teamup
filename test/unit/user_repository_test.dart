@@ -1,16 +1,14 @@
-import 'package:flutter_test/flutter_test.dart';
-import 'package:mockito/mockito.dart';
-import 'package:mockito/annotations.dart';
-import 'package:dartz/dartz.dart';
 import 'package:dio/dio.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:mockito/annotations.dart';
+import 'package:mockito/mockito.dart';
 import 'package:team_up/core/errors/failures.dart';
 import 'package:team_up/core/network/api_client.dart';
 import 'package:team_up/core/network/network_info.dart';
 import 'package:team_up/core/storage/local_storage.dart';
 import 'package:team_up/features/users/data/repositories/user_repository_impl.dart';
-import 'package:team_up/features/users/domain/entities/user.dart';
 import 'package:team_up/features/users/domain/entities/advanced_filter.dart';
-import 'package:team_up/features/users/domain/repositories/user_repository.dart';
+import 'package:team_up/features/users/domain/entities/user.dart';
 
 import 'user_repository_test.mocks.dart';
 
