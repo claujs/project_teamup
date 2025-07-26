@@ -8,24 +8,20 @@ void main() {
     testWidgets('should display loading indicator', (
       WidgetTester tester,
     ) async {
-      // Arrange & Act
       await tester.pumpWidget(
         const ProviderScope(
           child: MaterialApp(home: Scaffold(body: LoadingWidget())),
         ),
       );
 
-      // Assert
       expect(find.byType(CircularProgressIndicator), findsOneWidget);
     });
 
     testWidgets('should display loading indicator with message', (
       WidgetTester tester,
     ) async {
-      // Arrange
       const message = 'Loading data...';
 
-      // Act
       await tester.pumpWidget(
         const ProviderScope(
           child: MaterialApp(
@@ -34,7 +30,6 @@ void main() {
         ),
       );
 
-      // Assert
       expect(find.byType(CircularProgressIndicator), findsOneWidget);
       expect(find.text(message), findsOneWidget);
     });
@@ -42,10 +37,8 @@ void main() {
     testWidgets('should display custom size loading indicator', (
       WidgetTester tester,
     ) async {
-      // Arrange
       const size = 50.0;
 
-      // Act
       await tester.pumpWidget(
         const ProviderScope(
           child: MaterialApp(
@@ -54,7 +47,6 @@ void main() {
         ),
       );
 
-      // Assert
       expect(find.byType(CircularProgressIndicator), findsOneWidget);
 
       final sizedBox = tester.widget<SizedBox>(
@@ -73,14 +65,12 @@ void main() {
     testWidgets('should not display message when not provided', (
       WidgetTester tester,
     ) async {
-      // Arrange & Act
       await tester.pumpWidget(
         const ProviderScope(
           child: MaterialApp(home: Scaffold(body: LoadingWidget())),
         ),
       );
 
-      // Assert
       expect(find.byType(CircularProgressIndicator), findsOneWidget);
       expect(find.byType(Text), findsNothing);
     });

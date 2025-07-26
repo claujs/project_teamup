@@ -28,6 +28,81 @@ class PostsNotifier extends StateNotifier<PostsState> {
       (posts) => state = PostsState.loaded(posts),
     );
   }
+
+  Future<void> likePost(String postId, String userId) async {
+    final currentState = state;
+    if (currentState is! _Loaded) return;
+
+    final posts = currentState.posts;
+    final postIndex = posts.indexWhere((post) => post.id == postId);
+    if (postIndex == -1) return;
+
+    final post = posts[postIndex];
+    final isLiked = post.likedByUserIds.contains(userId);
+
+    final updatedPosts = [...posts];
+    if (isLiked) {
+      updatedPosts[postIndex] = post.copyWith(
+        likedByUserIds: post.likedByUserIds
+            .where((id) => id != userId)
+            .toList(),
+        likesCount: post.likesCount - 1,
+      );
+    } else {
+      updatedPosts[postIndex] = post.copyWith(
+        likedByUserIds: [...post.likedByUserIds, userId],
+        likesCount: post.likesCount + 1,
+      );
+    }
+
+    state = PostsState.loaded(updatedPosts);
+
+    final result = isLiked
+        ? await _postRepository.unlikePost(postId, userId)
+        : await _postRepository.likePost(postId, userId);
+
+    result.fold(
+      (failure) {
+        state = PostsState.loaded(posts);
+      },
+      (updatedPost) {
+        final finalPosts = [...updatedPosts];
+        finalPosts[postIndex] = updatedPost;
+        state = PostsState.loaded(finalPosts);
+      },
+    );
+  }
+
+  Future<void> addComment(
+    String postId,
+    String content,
+    String userId,
+    String userName,
+    String userAvatar,
+  ) async {
+    final currentState = state;
+    if (currentState is! _Loaded) return;
+
+    final result = await _postRepository.addComment(
+      postId,
+      content,
+      userId,
+      userName,
+      userAvatar,
+    );
+
+    result.fold((failure) => state = PostsState.error(failure.message), (
+      updatedPost,
+    ) {
+      final posts = currentState.posts;
+      final postIndex = posts.indexWhere((post) => post.id == postId);
+      if (postIndex != -1) {
+        final updatedPosts = [...posts];
+        updatedPosts[postIndex] = updatedPost;
+        state = PostsState.loaded(updatedPosts);
+      }
+    });
+  }
 }
 
 final postsNotifierProvider = StateNotifierProvider<PostsNotifier, PostsState>((

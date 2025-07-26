@@ -1,9 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:cached_network_image/cached_network_image.dart';
-import 'package:intl/intl.dart';
+import 'package:share_plus/share_plus.dart';
+import '../../../../l10n/app_localizations.dart';
 import '../../../../shared/widgets/loading_widget.dart';
+import '../../../../core/providers.dart';
+import '../../../auth/presentation/auth_notifier.dart';
 import '../posts_notifier.dart';
+import '../../../../core/utils/responsive_utils.dart';
+import '../widgets/post_card.dart';
 
 class FeedScreen extends ConsumerStatefulWidget {
   const FeedScreen({super.key});
@@ -12,167 +16,116 @@ class FeedScreen extends ConsumerStatefulWidget {
   ConsumerState<FeedScreen> createState() => _FeedScreenState();
 }
 
-class _FeedScreenState extends ConsumerState<FeedScreen> {
+class _FeedScreenState extends ConsumerState<FeedScreen>
+    with WidgetsBindingObserver {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       ref.read(postsNotifierProvider.notifier).loadPosts();
     });
   }
 
   @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    super.didChangeAppLifecycleState(state);
+    if (state == AppLifecycleState.resumed) {
+      _refreshFeed();
+    }
+  }
+
+  Future<void> _refreshFeed() async {
+    await ref.read(postsNotifierProvider.notifier).loadPosts(refresh: true);
+  }
+
+  void _sharePost(BuildContext context, String content, String authorName) {
+    final l10n = AppLocalizations.of(context)!;
+    final shareText =
+        '${l10n.sharedBy} $authorName ${l10n.onTeamUp}:\n\n$content';
+    Share.share(shareText, subject: l10n.teamUpPost);
+  }
+
+  void _toggleComments(String postId) {
+    final uiState = ref.read(uiStateProvider);
+    final isExpanded = uiState.expandedPostIds.contains(postId);
+
+    if (isExpanded) {
+      ref.read(uiStateProvider.notifier).togglePostExpansion(postId);
+      ref.read(commentControllersProvider.notifier).removeController(postId);
+    } else {
+      ref.read(uiStateProvider.notifier).togglePostExpansion(postId);
+      // O controller será criado automaticamente quando necessário
+    }
+  }
+
+  void _submitComment(String postId) {
+    final authState = ref.read(authNotifierProvider);
+    final controller = ref
+        .read(commentControllersProvider.notifier)
+        .getController(postId);
+
+    authState.when(
+      initial: () {},
+      loading: () {},
+      authenticated: (user) {
+        final content = controller.text.trim();
+        if (content.isNotEmpty) {
+          ref
+              .read(postsNotifierProvider.notifier)
+              .addComment(
+                postId,
+                content,
+                user.id,
+                '${user.firstName ?? ''} ${user.lastName ?? ''}',
+                '',
+              );
+          ref.read(commentControllersProvider.notifier).clearController(postId);
+        }
+      },
+      unauthenticated: () {},
+      error: (message) {},
+    );
+  }
+
+  @override
   Widget build(BuildContext context) {
     final postsState = ref.watch(postsNotifierProvider);
+    final authState = ref.watch(authNotifierProvider);
+    final uiState = ref.watch(uiStateProvider);
 
     return Scaffold(
       body: postsState.when(
-        initial: () => const LoadingWidget(message: 'Carregando posts...'),
-        loading: () => const LoadingWidget(message: 'Carregando posts...'),
+        initial: () => const LoadingWidget(),
+        loading: () => const LoadingWidget(),
         loaded: (posts) => RefreshIndicator(
-          onRefresh: () =>
-              ref.read(postsNotifierProvider.notifier).loadPosts(refresh: true),
+          onRefresh: () async {
+            if (mounted) {
+              await _refreshFeed();
+            }
+          },
           child: posts.isEmpty
-              ? const Center(
-                  child: Text(
-                    'Nenhum post encontrado',
-                    style: TextStyle(fontSize: 16, color: Colors.grey),
-                  ),
-                )
-              : ListView.builder(
-                  padding: const EdgeInsets.all(16),
-                  itemCount: posts.length,
-                  itemBuilder: (context, index) {
-                    final post = posts[index];
-                    return Card(
-                      margin: const EdgeInsets.only(bottom: 16),
-                      child: Padding(
-                        padding: const EdgeInsets.all(16),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            // Author info
-                            Row(
-                              children: [
-                                CircleAvatar(
-                                  radius: 20,
-                                  backgroundImage: CachedNetworkImageProvider(
-                                    post.authorAvatar,
-                                  ),
-                                ),
-                                const SizedBox(width: 12),
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        post.authorName,
-                                        style: const TextStyle(
-                                          fontWeight: FontWeight.bold,
-                                          fontSize: 16,
-                                        ),
-                                      ),
-                                      Text(
-                                        _formatDate(post.createdAt),
-                                        style: TextStyle(
-                                          color: Colors.grey[600],
-                                          fontSize: 12,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                                const Icon(Icons.more_vert, color: Colors.grey),
-                              ],
-                            ),
-                            const SizedBox(height: 12),
-
-                            // Post content
-                            Text(
-                              post.content,
-                              style: const TextStyle(fontSize: 14),
-                            ),
-
-                            // Tags
-                            if (post.tags.isNotEmpty) ...[
-                              const SizedBox(height: 8),
-                              Wrap(
-                                spacing: 4,
-                                children: post.tags
-                                    .map(
-                                      (tag) => Chip(
-                                        label: Text(
-                                          tag,
-                                          style: const TextStyle(fontSize: 12),
-                                        ),
-                                        backgroundColor: Theme.of(
-                                          context,
-                                        ).colorScheme.primary.withOpacity(0.1),
-                                        side: BorderSide.none,
-                                      ),
-                                    )
-                                    .toList(),
-                              ),
-                            ],
-
-                            // Image
-                            if (post.imageUrl != null) ...[
-                              const SizedBox(height: 12),
-                              ClipRRect(
-                                borderRadius: BorderRadius.circular(8),
-                                child: CachedNetworkImage(
-                                  imageUrl: post.imageUrl!,
-                                  width: double.infinity,
-                                  height: 200,
-                                  fit: BoxFit.cover,
-                                  placeholder: (context, url) => Container(
-                                    height: 200,
-                                    color: Colors.grey[200],
-                                    child: const Center(
-                                      child: CircularProgressIndicator(),
-                                    ),
-                                  ),
-                                  errorWidget: (context, url, error) =>
-                                      Container(
-                                        height: 200,
-                                        color: Colors.grey[200],
-                                        child: const Center(
-                                          child: Icon(Icons.error),
-                                        ),
-                                      ),
-                                ),
-                              ),
-                            ],
-
-                            const SizedBox(height: 12),
-
-                            // Actions
-                            Row(
-                              children: [
-                                IconButton(
-                                  icon: const Icon(Icons.favorite_border),
-                                  onPressed: () {},
-                                ),
-                                Text('${post.likesCount}'),
-                                const SizedBox(width: 16),
-                                IconButton(
-                                  icon: const Icon(Icons.comment_outlined),
-                                  onPressed: () {},
-                                ),
-                                const Text('0'),
-                                const SizedBox(width: 16),
-                                IconButton(
-                                  icon: const Icon(Icons.share_outlined),
-                                  onPressed: () {},
-                                ),
-                              ],
-                            ),
-                          ],
-                        ),
+              ? ListView(
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  children: [
+                    SizedBox(height: 200),
+                    Center(
+                      child: Text(
+                        AppLocalizations.of(context)!.noPostsFound,
+                        style: TextStyle(fontSize: 16, color: Colors.grey),
                       ),
-                    );
-                  },
+                    ),
+                  ],
+                )
+              : ResponsiveBuilder(
+                  mobile: _buildMobileLayout(posts, authState, uiState),
+                  tablet: _buildTabletLayout(posts, authState, uiState),
                 ),
         ),
         error: (message) => Center(
@@ -182,7 +135,7 @@ class _FeedScreenState extends ConsumerState<FeedScreen> {
               const Icon(Icons.error_outline, size: 64, color: Colors.red),
               const SizedBox(height: 16),
               Text(
-                'Erro ao carregar posts',
+                AppLocalizations.of(context)!.errorLoadingPosts,
                 style: Theme.of(context).textTheme.headlineSmall,
               ),
               const SizedBox(height: 8),
@@ -193,10 +146,14 @@ class _FeedScreenState extends ConsumerState<FeedScreen> {
               ),
               const SizedBox(height: 16),
               ElevatedButton(
-                onPressed: () => ref
-                    .read(postsNotifierProvider.notifier)
-                    .loadPosts(refresh: true),
-                child: const Text('Tentar novamente'),
+                onPressed: () {
+                  if (mounted) {
+                    ref
+                        .read(postsNotifierProvider.notifier)
+                        .loadPosts(refresh: true);
+                  }
+                },
+                child: Text(AppLocalizations.of(context)!.tryAgainButton),
               ),
             ],
           ),
@@ -205,18 +162,81 @@ class _FeedScreenState extends ConsumerState<FeedScreen> {
     );
   }
 
-  String _formatDate(DateTime date) {
-    final now = DateTime.now();
-    final difference = now.difference(date);
+  Widget _buildMobileLayout(
+    List<dynamic> posts,
+    AuthState authState,
+    UIState uiState,
+  ) {
+    return ListView.builder(
+      padding: const EdgeInsets.all(16),
+      itemCount: posts.length,
+      itemBuilder: (context, index) {
+        final post = posts[index];
+        return PostCard(
+          post: post,
+          authState: authState,
+          uiState: uiState,
+          onLike: () => ref
+              .read(postsNotifierProvider.notifier)
+              .likePost(
+                post.id,
+                authState.maybeWhen(
+                  authenticated: (user) => user.id,
+                  orElse: () => '',
+                ),
+              ),
+          onToggleComments: () => _toggleComments(post.id),
+          onShare: () => _sharePost(context, post.content, post.authorName),
+          onSubmitComment: () => _submitComment(post.id),
+          commentController: ref
+              .read(commentControllersProvider.notifier)
+              .getController(post.id),
+        );
+      },
+    );
+  }
 
-    if (difference.inDays > 0) {
-      return DateFormat('dd/MM/yyyy').format(date);
-    } else if (difference.inHours > 0) {
-      return '${difference.inHours}h atrás';
-    } else if (difference.inMinutes > 0) {
-      return '${difference.inMinutes}m atrás';
-    } else {
-      return 'Agora';
-    }
+  Widget _buildTabletLayout(
+    List<dynamic> posts,
+    AuthState authState,
+    UIState uiState,
+  ) {
+    final isLandscape = context.isLandscape;
+    final crossAxisCount = isLandscape ? 2 : 1;
+
+    return GridView.builder(
+      padding: context.responsivePadding,
+      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: crossAxisCount,
+        crossAxisSpacing: 16,
+        mainAxisSpacing: 16,
+        childAspectRatio: isLandscape ? 0.8 : 1.2,
+      ),
+      itemCount: posts.length,
+      itemBuilder: (context, index) {
+        final post = posts[index];
+        return PostCard(
+          post: post,
+          authState: authState,
+          uiState: uiState,
+          onLike: () => ref
+              .read(postsNotifierProvider.notifier)
+              .likePost(
+                post.id,
+                authState.maybeWhen(
+                  authenticated: (user) => user.id,
+                  orElse: () => '',
+                ),
+              ),
+          onToggleComments: () => _toggleComments(post.id),
+          onShare: () => _sharePost(context, post.content, post.authorName),
+          onSubmitComment: () => _submitComment(post.id),
+          commentController: ref
+              .read(commentControllersProvider.notifier)
+              .getController(post.id),
+          isTablet: true,
+        );
+      },
+    );
   }
 }

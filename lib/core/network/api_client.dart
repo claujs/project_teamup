@@ -1,4 +1,5 @@
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
 import '../constants/app_constants.dart';
 
 class ApiClient {
@@ -17,6 +18,7 @@ class ApiClient {
         headers: {
           'Content-Type': 'application/json',
           'Accept': 'application/json',
+          'x-api-key': 'reqres-free-v1',
         },
       ),
     );
@@ -25,7 +27,7 @@ class ApiClient {
       LogInterceptor(
         requestBody: true,
         responseBody: true,
-        logPrint: (object) => print(object),
+        logPrint: (object) => debugPrint(object.toString()),
       ),
     );
   }

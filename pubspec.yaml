@@ -30,6 +30,8 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
+  flutter_localizations:
+    sdk: flutter
   
   # State Management
   flutter_riverpod: ^2.5.1
@@ -50,16 +52,21 @@ dependencies:
   freezed_annotation: ^2.4.1
   json_annotation: ^4.9.0
   faker: ^2.1.0
-  intl: ^0.19.0
+  intl: ^0.20.2
   dartz: ^0.10.1
+  crypto: ^3.0.3
   
   # UI
   cupertino_icons: ^1.0.8
   flutter_staggered_grid_view: ^0.7.0
   cached_network_image: ^3.3.1
+  shimmer: ^3.0.0
   
   # Network
   connectivity_plus: ^6.0.3
+  
+  # Sharing
+  share_plus: ^7.2.2
 
 dev_dependencies:
   flutter_test:
@@ -86,6 +93,9 @@ flutter:
   # included with your application, so that you can use the icons in
   # the material Icons class.
   uses-material-design: true
+  
+  # Internationalization
+  generate: true
 
   # To add assets to your application, add an assets section, like this:
   # assets:

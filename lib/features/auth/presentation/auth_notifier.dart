@@ -1,6 +1,8 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 import '../../../core/providers.dart';
+import '../../../core/storage/local_user_service.dart';
 import '../domain/entities/auth_user.dart';
 import '../domain/repositories/auth_repository.dart';
 
@@ -17,14 +19,47 @@ class AuthState with _$AuthState {
 
 class AuthNotifier extends StateNotifier<AuthState> {
   final AuthRepository _authRepository;
+  final LocalUserService _localUserService;
 
-  AuthNotifier(this._authRepository) : super(const AuthState.initial()) {
+  AuthNotifier(this._authRepository)
+    : _localUserService = LocalUserService(),
+      super(const AuthState.initial()) {
     _checkAuthStatus();
   }
 
   Future<void> _checkAuthStatus() async {
     state = const AuthState.loading();
 
+    try {
+      final hasSavedCredentials = await _localUserService.hasSavedCredentials();
+      if (hasSavedCredentials) {
+        final credentials = await _localUserService.getSavedCredentials();
+        if (credentials != null) {
+          final email = credentials['email'];
+          final password = credentials['password'];
+
+          if (email is String && password is String) {
+            final result = await _authRepository.login(email, password);
+            result.fold((failure) => _proceedWithNormalAuthCheck(), (user) {
+              state = AuthState.authenticated(user);
+              return;
+            });
+          } else {
+            _proceedWithNormalAuthCheck();
+          }
+        } else {
+          _proceedWithNormalAuthCheck();
+        }
+      } else {
+        _proceedWithNormalAuthCheck();
+      }
+    } catch (e) {
+      debugPrint('Error checking auth status: $e');
+      _proceedWithNormalAuthCheck();
+    }
+  }
+
+  Future<void> _proceedWithNormalAuthCheck() async {
     final isLoggedIn = await _authRepository.isLoggedIn();
     if (isLoggedIn) {
       final result = await _authRepository.getCurrentUser();
@@ -49,8 +84,19 @@ class AuthNotifier extends StateNotifier<AuthState> {
     );
   }
 
+  Future<void> register(String email, String fullName, String password) async {
+    state = const AuthState.loading();
+
+    final result = await _authRepository.register(email, fullName, password);
+    result.fold(
+      (failure) => state = AuthState.error(failure.message),
+      (user) => state = AuthState.authenticated(user),
+    );
+  }
+
   Future<void> logout() async {
     await _authRepository.logout();
+    await _localUserService.clearSavedCredentials();
     state = const AuthState.unauthenticated();
   }
 }

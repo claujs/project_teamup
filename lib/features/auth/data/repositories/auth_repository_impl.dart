@@ -1,54 +1,106 @@
 import 'package:dartz/dartz.dart';
-import 'package:dio/dio.dart';
 import '../../../../core/constants/app_constants.dart';
+import '../../../../core/constants/app_strings.dart';
 import '../../../../core/errors/failures.dart';
-import '../../../../core/network/api_client.dart';
 import '../../../../core/storage/local_storage.dart';
+import '../../../../core/storage/local_user_service.dart';
 import '../../domain/entities/auth_user.dart';
 import '../../domain/repositories/auth_repository.dart';
 
 class AuthRepositoryImpl implements AuthRepository {
-  final ApiClient _apiClient;
   final LocalStorage _localStorage;
+  final LocalUserService _localUserService;
 
-  AuthRepositoryImpl({
-    required ApiClient apiClient,
-    required LocalStorage localStorage,
-  }) : _apiClient = apiClient,
-       _localStorage = localStorage;
+  AuthRepositoryImpl({required LocalStorage localStorage})
+    : _localStorage = localStorage,
+      _localUserService = LocalUserService();
 
   @override
   Future<Either<Failure, AuthUser>> login(String email, String password) async {
     try {
-      final response = await _apiClient.dio.post(
-        AppConstants.loginEndpoint,
-        data: {'email': email, 'password': password},
+      final userData = await _localUserService.getUser(email);
+      if (userData != null && userData.isNotEmpty) {
+        // Local user found, validate password
+        if (await _localUserService.validateUser(email, password)) {
+          await _localStorage.saveString(
+            AppConstants.authTokenKey,
+            AppStrings.localUserToken,
+          );
+          return Right(
+            AuthUser(
+              id: userData['id']?.toString() ?? '',
+              email: userData['email']?.toString() ?? '',
+              token: AppStrings.localUserToken,
+              firstName: userData['firstName']?.toString() ?? '',
+              lastName: userData['lastName']?.toString() ?? '',
+            ),
+          );
+        }
+      }
+
+      // Demo user check
+      if (email == AppStrings.demoEmail &&
+          password == AppStrings.demoPassword) {
+        await _localStorage.saveString(
+          AppConstants.authTokenKey,
+          AppStrings.demoToken,
+        );
+        return Right(
+          AuthUser(
+            id: AppStrings.demoUserId,
+            email: email,
+            token: AppStrings.demoToken,
+            firstName: AppStrings.demoFirstName,
+            lastName: AppStrings.demoLastName,
+          ),
+        );
+      }
+
+      // No valid credentials found
+      return Left(AuthFailure('Credenciais inválidas'));
+    } catch (e) {
+      return Left(ServerFailure('Erro interno: ${e.toString()}'));
+    }
+  }
+
+  @override
+  Future<Either<Failure, AuthUser>> register(
+    String email,
+    String fullName,
+    String password,
+  ) async {
+    try {
+      final existingUser = await _localUserService.getUser(email);
+      if (existingUser != null && existingUser.isNotEmpty) {
+        return Left(AuthFailure('Usuário já existe'));
+      }
+
+      // Create new user
+      final registrationSuccess = await _localUserService.registerUser(
+        email,
+        fullName,
+        password,
       );
-
-      final token = response.data['token'];
-      if (token != null) {
-        final authUser = AuthUser(
-          id: '1', // ReqRes doesn't return user ID, using dummy
-          email: email,
-          token: token,
-        );
-
-        // Save token and user data
-        await _localStorage.saveString(AppConstants.authTokenKey, token);
-        await _localStorage.saveObject(
-          AppConstants.userDataKey,
-          authUser.toJson(),
-        );
-
-        return Right(authUser);
-      } else {
-        return Left(AuthFailure('Invalid credentials'));
+      if (registrationSuccess) {
+        final userData = await _localUserService.getUser(email);
+        if (userData != null && userData.isNotEmpty) {
+          await _localStorage.saveString(
+            AppConstants.authTokenKey,
+            AppStrings.localUserToken,
+          );
+          return Right(
+            AuthUser(
+              id: userData['id'],
+              email: userData['email'],
+              token: AppStrings.localUserToken,
+              firstName: userData['firstName'],
+              lastName: userData['lastName'],
+            ),
+          );
+        }
       }
-    } on DioException catch (e) {
-      if (e.response?.statusCode == 400) {
-        return Left(AuthFailure('Invalid credentials'));
-      }
-      return Left(ServerFailure(e.message ?? 'Server error'));
+
+      return Left(AuthFailure('Erro ao cadastrar usuário'));
     } catch (e) {
       return Left(ServerFailure(e.toString()));
     }
@@ -62,7 +114,9 @@ class AuthRepositoryImpl implements AuthRepository {
       );
 
       if (userData != null) {
-        final authUser = AuthUser.fromJson(userData);
+        // Garantir que o Map tem o tipo correto para Hive
+        final map = Map<String, dynamic>.from(userData);
+        final authUser = AuthUser.fromJson(map);
         return Right(authUser);
       } else {
         return Right(null);
