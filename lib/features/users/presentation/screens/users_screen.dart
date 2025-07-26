@@ -306,7 +306,7 @@ class _UserCard extends StatelessWidget {
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  _generateJobInfo(context, user.id),
+                  user.getJobInfo(context),
                   style: TextStyle(
                     color: Theme.of(context).colorScheme.primary,
                     fontWeight: FontWeight.w500,
@@ -354,7 +354,7 @@ class _UserCard extends StatelessWidget {
             Text(user.email),
             const SizedBox(height: 4),
             Text(
-              _generateJobInfo(context, user.id),
+              user.getJobInfo(context),
               style: TextStyle(
                 color: Theme.of(context).colorScheme.primary,
                 fontWeight: FontWeight.w500,
@@ -369,33 +369,5 @@ class _UserCard extends StatelessWidget {
         onTap: onTap,
       ),
     );
-  }
-
-  String _generateJobInfo(BuildContext context, int userId) {
-    // Generate deterministic job info based on user ID
-    final l10n = AppLocalizations.of(context)!;
-    final jobTitles = [
-      l10n.jobTitleFrontend,
-      l10n.jobTitleBackend,
-      l10n.jobTitleUxUi,
-      l10n.jobTitleProductManager,
-      l10n.jobTitleDevOps,
-      l10n.jobTitleDataScientist,
-      l10n.jobTitleQa,
-      l10n.jobTitleTechLead,
-    ];
-    final departments = [
-      l10n.departmentTech,
-      l10n.departmentProduct,
-      l10n.departmentDesign,
-      l10n.departmentEngineering,
-      l10n.departmentData,
-      l10n.departmentQuality,
-    ];
-
-    final jobIndex = userId % jobTitles.length;
-    final deptIndex = userId % departments.length;
-
-    return '${jobTitles[jobIndex]} - ${departments[deptIndex]}';
   }
 }

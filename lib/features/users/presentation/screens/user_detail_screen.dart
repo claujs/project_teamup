@@ -4,7 +4,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import '../../../../core/providers.dart';
 import '../../../../shared/widgets/loading_widget.dart';
 import '../../../chat/presentation/screens/chat_screen.dart';
-import 'package:faker/faker.dart';
+import '../../domain/entities/user.dart';
 
 class UserDetailScreen extends ConsumerWidget {
   final String userId;
@@ -95,7 +95,7 @@ class UserDetailScreen extends ConsumerWidget {
                   const SizedBox(height: 8),
 
                   Text(
-                    _generateJobTitle(user.id),
+                    user.getJobTitle(context),
                     style: Theme.of(context).textTheme.titleMedium?.copyWith(
                       color: Theme.of(context).colorScheme.primary,
                       fontWeight: FontWeight.w500,
@@ -114,21 +114,21 @@ class UserDetailScreen extends ConsumerWidget {
                   _InfoCard(
                     icon: Icons.business_outlined,
                     title: 'Departamento',
-                    content: _generateDepartment(user.id),
+                    content: user.getDepartment(context),
                   ),
                   const SizedBox(height: 16),
 
                   _InfoCard(
                     icon: Icons.location_on_outlined,
                     title: 'Localização',
-                    content: _generateLocation(user.id),
+                    content: user.getLocation(),
                   ),
                   const SizedBox(height: 16),
 
                   _InfoCard(
                     icon: Icons.info_outlined,
                     title: 'Sobre',
-                    content: _generateBio(user.firstName),
+                    content: user.getBio(),
                   ),
                   const SizedBox(height: 32),
 
@@ -206,49 +206,6 @@ class UserDetailScreen extends ConsumerWidget {
         },
       ),
     );
-  }
-
-  String _generateJobTitle(int userId) {
-    final positions = [
-      'Desenvolvedor Frontend Sênior',
-      'Desenvolvedor Backend Pleno',
-      'Designer UX/UI',
-      'Product Manager',
-      'DevOps Engineer',
-      'Data Scientist',
-      'QA Engineer',
-      'Tech Lead',
-    ];
-    return positions[userId % positions.length];
-  }
-
-  String _generateDepartment(int userId) {
-    final departments = [
-      'Tecnologia',
-      'Produto',
-      'Design',
-      'Engenharia',
-      'Dados',
-      'Qualidade',
-    ];
-    return departments[userId % departments.length];
-  }
-
-  String _generateLocation(int userId) {
-    final locations = [
-      'São Paulo, SP',
-      'Rio de Janeiro, RJ',
-      'Belo Horizonte, MG',
-      'Brasília, DF',
-      'Remote',
-      'Porto Alegre, RS',
-    ];
-    return locations[userId % locations.length];
-  }
-
-  String _generateBio(String firstName) {
-    final faker = Faker();
-    return faker.lorem.sentences(2).join(' ');
   }
 }
 
