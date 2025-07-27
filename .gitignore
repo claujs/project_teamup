@@ -127,7 +127,6 @@ test_driver/*.log
 
 # Localization
 **/lib/generated/
-**/lib/l10n/
 
 # FVM (Flutter Version Management)
 .fvm/flutter_sdk
