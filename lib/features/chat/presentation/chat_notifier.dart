@@ -40,24 +40,15 @@ class ChatNotifier extends StateNotifier<ChatState> {
     });
   }
 
-  Future<void> sendMessage(String text) async {
-    if (text.trim().isEmpty) return;
+  Future<bool> sendMessage(String text) async {
+    if (!_isValidMessage(text)) return false;
 
     state.maybeWhen(
       loaded: (conversation) async {
-        final message = ChatMessage(
-          id: '',
-          text: text.trim(),
-          senderId: 'current_user',
-          receiverId: conversation.participantId,
-          timestamp: DateTime.now(),
-          isMe: true,
-        );
-
-        final updatedMessages = [...conversation.messages, message];
-        final updatedConversation = conversation.copyWith(
-          messages: updatedMessages,
-          lastActivity: DateTime.now(),
+        final message = _createMessage(text, conversation.participantId);
+        final updatedConversation = _addMessageToConversation(
+          conversation,
+          message,
         );
         state = ChatState.loaded(updatedConversation);
 
@@ -68,18 +59,43 @@ class ChatNotifier extends StateNotifier<ChatState> {
             state = ChatState.error(failure.message);
           },
           (sentMessage) {
-            final confirmedMessages = [...conversation.messages, sentMessage];
-            final confirmedConversation = conversation.copyWith(
-              messages: confirmedMessages,
-              lastActivity: DateTime.now(),
+            final confirmedConversation = _addMessageToConversation(
+              conversation,
+              sentMessage,
             );
             state = ChatState.loaded(confirmedConversation);
-
             _listenForAutoResponse(conversation);
           },
         );
       },
       orElse: () {},
+    );
+    return true;
+  }
+
+  bool _isValidMessage(String text) {
+    return text.trim().isNotEmpty;
+  }
+
+  ChatMessage _createMessage(String text, String receiverId) {
+    return ChatMessage(
+      id: '',
+      text: text.trim(),
+      senderId: 'current_user',
+      receiverId: receiverId,
+      timestamp: DateTime.now(),
+      isMe: true,
+    );
+  }
+
+  ChatConversation _addMessageToConversation(
+    ChatConversation conversation,
+    ChatMessage message,
+  ) {
+    final updatedMessages = [...conversation.messages, message];
+    return conversation.copyWith(
+      messages: updatedMessages,
+      lastActivity: DateTime.now(),
     );
   }
 

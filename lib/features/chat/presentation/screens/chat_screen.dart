@@ -23,10 +23,8 @@ class ChatScreen extends ConsumerStatefulWidget {
 }
 
 class _ChatScreenState extends ConsumerState<ChatScreen> {
-  bool _isScrolling = false;
   final TextEditingController _messageController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
-  bool _shouldAutoScroll = true;
 
   @override
   void dispose() {
@@ -38,7 +36,6 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
   @override
   void initState() {
     super.initState();
-    // Carregar conversa uma única vez
     Future.microtask(() {
       if (mounted) {
         ref
@@ -52,34 +49,27 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     });
   }
 
-  void _sendMessage() {
-    if (_messageController.text.trim().isEmpty) return;
-
-    ref
-        .read(chatNotifierProvider.notifier)
-        .sendMessage(_messageController.text);
+  void _sendMessage() async {
+    final message = _messageController.text;
     _messageController.clear();
-    _shouldAutoScroll = true;
-    _scrollToBottom();
+
+    final success = await ref
+        .read(chatNotifierProvider.notifier)
+        .sendMessage(message);
+
+    if (success) {
+      _scrollToBottom();
+    }
   }
 
   void _scrollToBottom() {
-    if (!mounted || _isScrolling) return;
+    if (!mounted || !_scrollController.hasClients) return;
 
-    if (_scrollController.hasClients && _shouldAutoScroll) {
-      _isScrolling = true;
-      _scrollController
-          .animateTo(
-            _scrollController.position.maxScrollExtent,
-            duration: const Duration(milliseconds: 300),
-            curve: Curves.easeOut,
-          )
-          .then((_) {
-            if (mounted) {
-              _isScrolling = false;
-            }
-          });
-    }
+    _scrollController.animateTo(
+      _scrollController.position.maxScrollExtent,
+      duration: const Duration(milliseconds: 300),
+      curve: Curves.easeOut,
+    );
   }
 
   Widget _buildMessageInput() {
@@ -223,10 +213,12 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
               ),
               loading: () => const Center(child: CircularProgressIndicator()),
               loaded: (conversation) {
-                if (_shouldAutoScroll && conversation.messages.isNotEmpty) {
-                  Future.microtask(() => _scrollToBottom());
-                  _shouldAutoScroll = false;
-                }
+                // Auto-scroll quando há novas mensagens
+                WidgetsBinding.instance.addPostFrameCallback((_) {
+                  if (conversation.messages.isNotEmpty) {
+                    _scrollToBottom();
+                  }
+                });
 
                 return ListView.builder(
                   controller: _scrollController,
